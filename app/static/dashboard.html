@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JOOTRH GBV Mentor Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .chat-container {
+            height: calc(100vh - 200px);
+        }
+
+        .message-user {
+            background-color: #e2e8f0;
+            border-radius: 1rem 1rem 1rem 0;
+            margin-right: auto;
+        }
+
+        .message-assistant {
+            background-color: #3b82f6;
+            color: white;
+            border-radius: 1rem 1rem 0 1rem;
+            margin-left: auto;
+        }
+
+        .message-mentor {
+            background-color: #10b981;
+            color: white;
+            border-radius: 1rem 1rem 0 1rem;
+            margin-left: auto;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 flex h-screen overflow-hidden text-slate-800">
+
+    <!-- Sidebar: Queue List -->
+    <div class="w-1/3 max-w-sm bg-white border-r border-slate-200 flex flex-col">
+        <div class="p-6 border-b border-slate-200 bg-slate-800 text-white shadow-sm">
+            <h1 class="text-xl font-bold tracking-wide">Mentor Terminal</h1>
+            <p class="text-sm text-slate-300 mt-1">Active Escalations & Alerts</p>
+            <button onclick="fetchQueue()"
+                class="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded text-sm font-semibold transition flex items-center justify-center w-full shadow">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                    </path>
+                </svg>
+                Refresh Queue
+            </button>
+        </div>
+
+        <div id="queue-list" class="flex-1 overflow-y-auto p-4 space-y-3">
+            <!-- Queue items will be injected here -->
+            <p class="text-slate-500 text-center text-sm italic mt-10">Loading queue...</p>
+        </div>
+    </div>
+
+    <!-- Main Content: Chat History & Reply Box -->
+    <div class="flex-1 flex flex-col bg-slate-50">
+        <!-- Header -->
+        <header class="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center shadow-sm z-10">
+            <div>
+                <h1
+                    class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">
+                    Mentor Dashboard</h1>
+                <p class="text-sm text-slate-500">Live GBV & Mental Health Crisis Triage</p>
+            </div>
+            <div class="flex items-center space-x-4">
+                <a href="/admin" id="admin-link"
+                    class="hidden text-sm font-medium text-indigo-600 hover:text-indigo-800 transition">View
+                    Analytics</a>
+                <div class="text-right">
+                    <p class="text-sm font-semibold text-slate-700" id="mentor-name-display">Loading...</p>
+                    <button onclick="logout()"
+                        class="text-xs text-red-500 hover:text-red-700 hover:underline transition">Sign Out</button>
+                </div>
+                <div class="flex items-center space-x-2 bg-green-50 px-3 py-1.5 rounded-full border border-green-100">
+                    <span class="relative flex h-3 w-3">
+                        <span
+                            class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                    </span>
+                    <span class="text-sm font-medium text-green-700">System Online</span>
+                </div>
+            </div>
+        </header>
+        <!-- Inner Chat Header -->
+        <div class="p-6 border-b border-slate-200 bg-white flex justify-between items-center shadow-sm z-10">
+            <div>
+                <h2 id="current-user-title" class="text-xl font-bold text-slate-800">Select a case</h2>
+                <p id="current-user-status" class="text-sm text-slate-500">Waiting for selection... (Queue updates every
+                    5s)</p>
+            </div>
+            <button id="resolve-btn" onclick="resolveSession()"
+                class="hidden px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded font-semibold text-sm transition shadow">
+                Release lock & Return to AI
+            </button>
+        </div>
+
+        <!-- Chat History -->
+        <div id="chat-history" class="chat-container overflow-y-auto p-6 space-y-4">
+            <!-- Messages will be injected here -->
+            <div class="flex items-center justify-center h-full text-slate-400">
+                <p>No chat history to display. Select a user from the queue.</p>
+            </div>
+        </div>
+
+        <!-- Compose Box -->
+        <div class="p-4 bg-white border-t border-slate-200">
+            <div class="max-w-4xl mx-auto flex space-x-4">
+                <input type="text" id="reply-input" disabled
+                    class="flex-1 border border-slate-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-100 disabled:cursor-not-allowed"
+                    placeholder="Type your mentor reply here... (Sends directly via WhatsApp)">
+                <button id="send-btn" disabled onclick="sendReply()"
+                    class="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 text-white font-bold rounded-lg transition shadow-md flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                    </svg>
+                    Send Reply
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentPhone = null;
+        let escalationsCache = [];
+        let token = localStorage.getItem("mentor_token");
+
+        // Auth Flow
+        function checkAuth() {
+            if (!token) {
+                document.getElementById('auth-overlay').classList.remove('hidden');
+            } else {
+                fetchQueue();
+                fetchMe();
+                setInterval(fetchQueue, 5000);
+            }
+        }
+
+        async function login(e) {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorMsg = document.getElementById('login-error');
+
+            errorMsg.innerText = "";
+
+            const formData = new URLSearchParams();
+            formData.append('username', email);
+            formData.append('password', password);
+
+            try {
+                const res = await fetch('/api/v1/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: formData
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    localStorage.setItem("mentor_token", data.access_token);
+                    token = data.access_token;
+                    document.getElementById('auth-overlay').classList.add('hidden');
+                    checkAuth();
+                } else {
+                    errorMsg.innerText = "Invalid credentials. Please try again or ask an Admin to register your account.";
+                }
+            } catch (err) {
+                errorMsg.innerText = "Network error connecting to the authentication server.";
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem("mentor_token");
+            window.location.reload();
+        }
+
+        async function fetchMe() {
+            try {
+                const res = await fetch('/api/v1/auth/me', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById('mentor-name-display').innerText = data.name;
+                    if (data.is_admin) {
+                        document.getElementById('admin-link').classList.remove('hidden');
+                    }
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        async function fetchQueue() {
+            try {
+                const response = await fetch('/api/v1/mentor/queue', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.status === 401) { logout(); return; } // Token expired
+
+                const data = await response.json();
+                escalationsCache = data.active_escalations;
+                renderQueue();
+
+                // Refresh active chat if someone is selected
+                if (currentPhone) {
+                    const activeCase = escalationsCache.find(c => c.phone_number === currentPhone);
+                    if (activeCase) {
+                        renderChat(activeCase.history);
+                    } else {
+                        // They were resolved and removed from queue
+                        currentPhone = null;
+                        renderChat([]);
+                        document.getElementById('current-user-title').innerText = "Select a case";
+                        document.getElementById('current-user-status').innerText = "Waiting for selection...";
+                        document.getElementById('reply-input').disabled = true;
+                        document.getElementById('send-btn').disabled = true;
+                        document.getElementById('resolve-btn').classList.add('hidden');
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to fetch queue", err);
+            }
+        }
+
+        function renderQueue() {
+            const list = document.getElementById('queue-list');
+            list.innerHTML = '';
+
+            if (escalationsCache.length === 0) {
+                list.innerHTML = `<p class="text-slate-500 text-center text-sm italic mt-10">No active emergencies found.</p>`;
+                return;
+            }
+
+            escalationsCache.forEach(escalation => {
+                const isSelected = currentPhone === escalation.phone_number;
+                const lastMsg = escalation.history[escalation.history.length - 1];
+                let snippet = lastMsg ? lastMsg.content.substring(0, 40) + "..." : "No messages";
+
+                const card = document.createElement('div');
+                card.className = `p-4 border rounded-lg cursor-pointer transition ${isSelected ? 'bg-blue-50 border-blue-400 shadow-sm' : 'bg-white border-slate-200 hover:bg-slate-50'}`;
+                card.onclick = () => selectUser(escalation.phone_number);
+
+                card.innerHTML = `
+                    <div class="flex justify-between items-center mb-1">
+                        <h3 class="font-bold text-slate-800 text-sm">${escalation.phone_number.replace('whatsapp:', '')}</h3>
+                        <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                    </div>
+                    <p class="text-xs text-slate-500 truncate">${snippet}</p>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        function selectUser(phone) {
+            currentPhone = phone;
+            const activeCase = escalationsCache.find(c => c.phone_number === phone);
+
+            document.getElementById('current-user-title').innerText = phone.replace('whatsapp:', '');
+            document.getElementById('current-user-status').innerText = "Active Emergency Handoff";
+            document.getElementById('resolve-btn').classList.remove('hidden');
+            document.getElementById('reply-input').disabled = false;
+            document.getElementById('send-btn').disabled = false;
+
+            renderChat(activeCase.history);
+            renderQueue();
+            document.getElementById('reply-input').focus();
+        }
+
+        function renderChat(history) {
+            const container = document.getElementById('chat-history');
+            container.innerHTML = '';
+
+            if (!history || history.length === 0) {
+                container.innerHTML = `<div class="flex items-center justify-center h-full text-slate-400"><p>No chat history to display.</p></div>`;
+                return;
+            }
+
+            history.forEach(msg => {
+                const isUser = msg.role === 'user';
+                const isMentor = msg.role.includes('assistant (mentor');
+
+                let cssClass = isUser ? 'message-user bg-white border border-slate-200' : 'message-assistant';
+                if (isMentor) cssClass = 'message-mentor';
+
+                let label = isUser ? 'User' : (isMentor ? msg.role.replace('assistant (', '').replace(')', '') : 'Bot Triage');
+
+                const bubble = document.createElement('div');
+                bubble.className = `max-w-[75%] p-4 mb-2 shadow-sm ${cssClass}`;
+                bubble.innerHTML = `
+                    <div class="text-[10px] font-bold uppercase tracking-wider mb-1 opacity-70">${label}</div>
+                    <div class="text-sm whitespace-pre-wrap">${escapeHtml(msg.content)}</div>
+                `;
+                container.appendChild(bubble);
+            });
+            container.scrollTop = container.scrollHeight;
+        }
+
+        async function sendReply() {
+            if (!currentPhone) return;
+            const input = document.getElementById('reply-input');
+            const message = input.value.trim();
+            if (!message) return;
+
+            input.disabled = true;
+            document.getElementById('send-btn').disabled = true;
+
+            try {
+                const res = await fetch('/api/v1/mentor/reply', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        phone_number: currentPhone,
+                        message: message,
+                        resolve_session: false
+                    })
+                });
+
+                if (res.status === 401) { logout(); return; }
+
+                if (res.ok) {
+                    input.value = '';
+                    await fetchQueue();
+                } else {
+                    alert("Failed to send reply. Please check server logs.");
+                }
+            } catch (e) {
+                console.error(e);
+                alert("Error sending message.");
+            } finally {
+                input.disabled = false;
+                document.getElementById('send-btn').disabled = false;
+                input.focus();
+            }
+        }
+
+        async function resolveSession() {
+            if (!currentPhone) return;
+            if (!confirm("Are you sure you want to release this session back to the AI?")) return;
+
+            try {
+                await fetch('/api/v1/mentor/reply', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        phone_number: currentPhone,
+                        message: "The human counselor has concluded this session. You are now back in standard bot triage. You can type /clear anytime.",
+                        resolve_session: true
+                    })
+                });
+                await fetchQueue();
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        document.getElementById('reply-input').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') sendReply();
+        });
+
+        function escapeHtml(unsafe) {
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // Initialize App
+        checkAuth();
+    </script>
+</body>
+
+</html>

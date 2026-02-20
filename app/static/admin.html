@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JooTRH Admin Analytics</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-slate-50 min-h-screen text-slate-800 font-sans">
+
+    <!-- Auth Protection -->
+    <div id="loading-overlay" class="fixed inset-0 bg-white z-50 flex items-center justify-center">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+    </div>
+
+    <div id="error-overlay" class="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center hidden">
+        <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+            <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z">
+                </path>
+            </svg>
+        </div>
+        <h2 class="text-2xl font-bold text-slate-800 mb-2">Access Denied</h2>
+        <p class="text-slate-500 mb-6" id="error-message">You do not have Administrator privileges.</p>
+        <a href="/mentor" class="text-indigo-600 hover:underline font-medium">Return to Mentor Dashboard</a>
+    </div>
+
+    <!-- Navigation -->
+    <nav
+        class="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center shadow-sm sticky top-0 z-10">
+        <div class="flex items-center space-x-3">
+            <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-800 to-slate-600">
+                Admin Control Center</h1>
+        </div>
+        <div class="flex items-center space-x-4">
+            <a href="/mentor" class="text-sm font-medium text-slate-600 hover:text-indigo-600 transition">Dashboard</a>
+            <button onclick="logout()" class="text-sm text-red-500 hover:underline">Sign Out</button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-6 py-8">
+        <div class="mb-8">
+            <h2 class="text-2xl font-bold text-slate-900">System Overview</h2>
+            <p class="text-slate-500 mt-1">Live metrics from the GBV & Mental Health Support Chatbot.</p>
+        </div>
+
+        <!-- Metric Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <!-- Total Users -->
+            <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">Total Users Reached</p>
+                        <p class="text-3xl font-extrabold text-slate-900 mt-2" id="stat-users">--</p>
+                    </div>
+                    <div class="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
+                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
+                            </path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Messages Processed -->
+            <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">Messages Processed</p>
+                        <p class="text-3xl font-extrabold text-slate-900 mt-2" id="stat-messages">--</p>
+                    </div>
+                    <div class="w-12 h-12 bg-indigo-50 rounded-lg flex items-center justify-center">
+                        <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z">
+                            </path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Triage Responses -->
+            <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">AI Interventions</p>
+                        <p class="text-3xl font-extrabold text-slate-900 mt-2" id="stat-ai">--</p>
+                    </div>
+                    <div class="w-12 h-12 bg-emerald-50 rounded-lg flex items-center justify-center">
+                        <svg class="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Emergencies -->
+            <div class="bg-white rounded-xl border border-red-200 p-6 shadow-sm relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-red-100 rounded-bl-full opacity-50 -mr-8 -mt-8"></div>
+                <div class="flex items-center justify-between relative z-10">
+                    <div>
+                        <p class="text-sm font-medium text-red-600 uppercase tracking-wider">Active Emergencies</p>
+                        <p class="text-3xl font-extrabold text-red-700 mt-2" id="stat-emergencies">--</p>
+                    </div>
+                    <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                        <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                            </path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mentors Table -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="px-6 py-5 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+                <h3 class="font-bold text-slate-800">Operational Capacity</h3>
+                <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold"
+                    id="stat-mentors">...</span>
+            </div>
+            <div class="p-6 text-sm text-slate-600">
+                <p>This panel shows the total number of registered counselor accounts capable of responding to emergency
+                    human handoff protocols from the Groq NLP triage module.</p>
+                <div class="mt-4 p-4 bg-yellow-50 rounded border border-yellow-100 flex items-start">
+                    <svg class="w-5 h-5 text-yellow-600 mr-2 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <p class="text-yellow-800">Only users with an Admin role can view this dashboard. To manage
+                        counselors, database administration tools are required.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const token = localStorage.getItem("mentor_token");
+
+        function logout() {
+            localStorage.removeItem("mentor_token");
+            window.location.href = '/mentor';
+        }
+
+        async function fetchStats() {
+            if (!token) {
+                document.getElementById('loading-overlay').classList.add('hidden');
+                const errBox = document.getElementById('error-overlay');
+                errBox.classList.remove('hidden');
+                document.getElementById('error-message').innerText = "Please log in first.";
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/v1/admin/stats', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) {
+                    throw new Error(response.status);
+                }
+
+                const data = await response.json();
+                const metrics = data.metrics;
+
+                document.getElementById('stat-users').innerText = metrics.total_users;
+                document.getElementById('stat-messages').innerText = metrics.total_messages_processed;
+                document.getElementById('stat-ai').innerText = metrics.total_ai_triage_responses;
+                document.getElementById('stat-emergencies').innerText = metrics.active_emergencies;
+                document.getElementById('stat-mentors').innerText = metrics.registered_counselors + " Active Counselors";
+
+                document.getElementById('loading-overlay').classList.add('hidden');
+
+            } catch (err) {
+                document.getElementById('loading-overlay').classList.add('hidden');
+                const errBox = document.getElementById('error-overlay');
+                errBox.classList.remove('hidden');
+
+                if (err.message === "403") {
+                    document.getElementById('error-message').innerText = "You do not have Administrator privileges.";
+                } else if (err.message === "401") {
+                    document.getElementById('error-message').innerText = "Your login session has expired.";
+                } else {
+                    document.getElementById('error-message').innerText = "Unable to fetch live database analytics.";
+                }
+            }
+        }
+
+        // Initialize
+        fetchStats();
+    </script>
+</body>
+
+</html>

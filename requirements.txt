@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+twilio
+groq
+python-dotenv
+sqlalchemy
+pydantic
+pydantic-settings
+requests
+python-multipart
+pytest
+httpx
