@@ -5,363 +5,493 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JooTRH Admin Hub</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; }
+        :root {
+            --teal-primary: #3BA7A0;
+            --teal-accent: #2C7C77;
+            --teal-light: #E6F7F6;
+        }
         .stat-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
-        .stat-card:hover { transform: translateY(-2px); }
-        .pending-badge { animation: pulse 2s infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #f1f5f9; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 6px; }
+        .stat-card:hover { transform: translateY(-3px); box-shadow: 0 12px 24px rgba(59,167,160,0.15); }
+        .pending-badge { animation: badge-pulse 2s infinite; }
+        @keyframes badge-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+        .sidebar-link { transition: all 0.2s ease; }
+        .sidebar-link.active { background: rgba(59,167,160,0.2); color: #3BA7A0; }
+        .sidebar-link:hover { background: rgba(255,255,255,0.06); color: white; }
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-thumb { background: rgba(59,167,160,0.3); border-radius: 6px; }
+        .card-enter { animation: fadeUp 0.4s ease forwards; opacity: 0; }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+        .period-btn { color: #64748b; }
+        .period-btn:hover { background: #E6F7F6; color: #2C7C77; }
+        .active-period { background: #3BA7A0 !important; color: white !important; }
     </style>
 </head>
 
-<body class="bg-slate-100 min-h-screen text-slate-800">
+<body class="bg-[#E6F7F6] min-h-screen text-slate-800">
 
-    <!-- Auth Protection Overlays -->
-    <div id="loading-overlay" class="fixed inset-0 bg-slate-900 z-50 flex flex-col items-center justify-center">
-        <div class="w-16 h-16 border-4 border-slate-700 border-t-blue-500 rounded-full animate-spin mb-6"></div>
-        <p class="text-slate-400 text-sm font-medium tracking-widest uppercase">Verifying Access...</p>
+    <!-- Auth Protection -->
+    <div id="loading-overlay" class="fixed inset-0 bg-[#1a2f2e] z-50 flex flex-col items-center justify-center">
+        <div class="w-16 h-16 border-4 border-[#2C7C77] border-t-[#3BA7A0] rounded-full animate-spin mb-6"></div>
+        <p class="text-[#3BA7A0] text-sm font-semibold tracking-widest uppercase">Verifying Access...</p>
     </div>
-
-    <div id="error-overlay" class="fixed inset-0 bg-slate-900 z-50 flex flex-col items-center justify-center hidden">
-        <div class="bg-slate-800 rounded-3xl p-12 max-w-sm w-full text-center shadow-2xl">
-            <div class="w-20 h-20 bg-red-900/40 rounded-full flex items-center justify-center mx-auto mb-6">
+    <div id="error-overlay" class="fixed inset-0 bg-[#1a2f2e] z-50 flex flex-col items-center justify-center hidden">
+        <div class="bg-[#243535] rounded-3xl p-12 max-w-sm w-full text-center shadow-2xl">
+            <div class="w-20 h-20 bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
                 <svg class="w-10 h-10 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
                 </svg>
             </div>
             <h2 class="text-2xl font-bold text-white mb-2">Access Denied</h2>
-            <p class="text-slate-400 mb-8 text-sm leading-relaxed" id="error-message">You do not have administrator privileges.</p>
-            <a href="/mentor" class="block w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold transition text-sm">Go to Mentor Dashboard</a>
+            <p class="text-slate-400 mb-8 text-sm" id="error-message">You do not have administrator privileges.</p>
+            <a href="/mentor" class="block w-full py-3 rounded-xl bg-[#3BA7A0] hover:bg-[#2C7C77] text-white font-semibold transition text-sm">Go to Mentor Dashboard</a>
         </div>
     </div>
 
-    <!-- Layout Wrapper -->
     <div class="flex min-h-screen">
 
         <!-- Sidebar -->
-        <aside class="w-64 bg-slate-900 text-white flex flex-col flex-shrink-0 min-h-screen sticky top-0 h-screen">
-            <!-- Logo -->
-            <div class="px-6 py-8 border-b border-slate-800">
+        <aside class="w-64 bg-[#1a2f2e] text-slate-300 flex flex-col flex-shrink-0 min-h-screen sticky top-0 h-screen">
+            <div class="px-6 py-7 border-b border-white/5">
                 <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center">
-                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:#3BA7A0">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
                         </svg>
                     </div>
                     <div>
-                        <h1 class="font-bold text-white text-sm">JooTRH Admin</h1>
-                        <p class="text-slate-500 text-xs">Control Center</p>
+                        <p class="font-bold text-white text-sm">JooTRH Admin</p>
+                        <p class="text-[10px] text-slate-500 uppercase tracking-wider">Control Center</p>
                     </div>
                 </div>
             </div>
 
-            <!-- Nav Links -->
-            <nav class="flex-1 px-4 py-6 space-y-1">
-                <a href="#analytics" class="flex items-center space-x-3 px-4 py-3 rounded-xl bg-blue-600/20 text-blue-400 font-medium text-sm">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+            <nav class="flex-1 px-3 py-5 space-y-1">
+                <button onclick="showSection('analytics')" class="sidebar-link active w-full text-left flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium" id="nav-analytics">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
                     <span>Analytics</span>
-                </a>
-                <a href="#approvals" class="flex items-center justify-between px-4 py-3 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 font-medium text-sm transition">
+                </button>
+                <button onclick="showSection('approvals')" class="sidebar-link w-full text-left flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium" id="nav-approvals">
                     <div class="flex items-center space-x-3">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-                        <span>Counselor Approvals</span>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+                        <span>Pending Approvals</span>
                     </div>
-                    <span id="sidebar-badge" class="hidden bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full pending-badge">!</span>
-                </a>
-                <a href="/mentor" class="flex items-center space-x-3 px-4 py-3 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 font-medium text-sm transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
-                    <span>Mentor Terminal</span>
-                </a>
+                    <span id="sidebar-badge" class="hidden bg-red-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full pending-badge">!</span>
+                </button>
+                <button onclick="showSection('mentors')" class="sidebar-link w-full text-left flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium" id="nav-mentors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    <span>Counselor Team</span>
+                </button>
             </nav>
 
-            <!-- Admin User -->
-            <div class="px-6 py-6 border-t border-slate-800">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-xs font-semibold text-white" id="admin-name-display">Admin</p>
-                        <p class="text-[10px] text-slate-500 uppercase tracking-wider">Administrator</p>
-                    </div>
-                    <button onclick="logout()" class="text-[10px] text-red-400 hover:text-red-300 uppercase tracking-wider font-bold transition">Sign Out</button>
-                </div>
+            <div class="px-5 py-5 border-t border-white/5">
+                <p class="text-xs font-semibold text-white" id="admin-name-display">Admin</p>
+                <p class="text-[10px] text-slate-500 uppercase tracking-wider mb-3">Administrator</p>
+                <button onclick="logout()" class="text-[10px] text-red-400 hover:text-red-300 uppercase tracking-wider font-bold transition">Sign Out</button>
             </div>
         </aside>
 
-        <!-- Main Content -->
+        <!-- Main -->
         <main class="flex-1 overflow-y-auto">
-            <!-- Top Header -->
-            <header class="bg-white border-b border-slate-200 px-8 py-5 flex justify-between items-center sticky top-0 z-10">
+            <header class="bg-white/70 backdrop-blur border-b border-[#3BA7A0]/20 px-8 py-4 flex justify-between items-center sticky top-0 z-10">
                 <div>
-                    <h2 class="text-xl font-bold text-slate-900">Dashboard Overview</h2>
-                    <p class="text-sm text-slate-500">GBV & Mental Health Support System — Live Metrics</p>
+                    <h2 id="page-title" class="text-xl font-bold text-slate-900">Dashboard Overview</h2>
+                    <p class="text-xs text-slate-500" id="page-subtitle">GBV & Mental Health Support System — Live Metrics</p>
                 </div>
-                <div class="flex items-center space-x-2 text-xs text-green-600 bg-green-50 px-4 py-2 rounded-full border border-green-200 font-semibold">
-                    <span class="relative flex h-2 w-2 mr-1">
-                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                        <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                    </span>
-                    System Online
+                <div class="flex items-center space-x-3">
+                    <!-- Period Filter Pills -->
+                    <div class="flex items-center bg-white border border-[#3BA7A0]/30 rounded-xl p-1 space-x-1" id="period-filter">
+                        <button onclick="setPeriod('today')" class="period-btn px-3 py-1.5 text-xs font-semibold rounded-lg transition" data-period="today">Today</button>
+                        <button onclick="setPeriod('week')" class="period-btn px-3 py-1.5 text-xs font-semibold rounded-lg transition" data-period="week">This Week</button>
+                        <button onclick="setPeriod('month')" class="period-btn px-3 py-1.5 text-xs font-semibold rounded-lg transition" data-period="month">This Month</button>
+                        <button onclick="setPeriod('all')" class="period-btn px-3 py-1.5 text-xs font-semibold rounded-lg transition active-period" data-period="all">All Time</button>
+                    </div>
+                    <button onclick="downloadReport()" id="download-btn" class="flex items-center space-x-2 px-4 py-2 bg-[#3BA7A0] hover:bg-[#2C7C77] text-white text-xs font-bold rounded-xl transition shadow-sm">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        <span>Download CSV</span>
+                    </button>
+                    <div class="flex items-center space-x-2 text-xs text-[#2C7C77] bg-[#E6F7F6] px-3 py-2 rounded-full border border-[#3BA7A0]/30 font-semibold">
+                        <span class="relative flex h-2 w-2">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#3BA7A0] opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2 w-2 bg-[#3BA7A0]"></span>
+                        </span>
+                        System Online
+                    </div>
                 </div>
             </header>
 
-            <div class="px-8 py-8 space-y-8" id="analytics">
-
-                <!-- Analytics Section -->
+            <!-- ANALYTICS SECTION -->
+            <div id="section-analytics" class="px-8 py-8 space-y-8">
+                <!-- Stat Cards -->
                 <section>
-                    <div class="mb-6">
-                        <h3 class="text-lg font-bold text-slate-900">System Analytics</h3>
-                        <p class="text-sm text-slate-500">Live metrics from the database.</p>
-                    </div>
-
+                    <h3 class="text-base font-bold text-slate-700 mb-4 uppercase tracking-wider text-xs">Live Metrics</h3>
                     <div class="grid grid-cols-2 lg:grid-cols-4 gap-5">
-                        <!-- Total Users -->
-                        <div class="stat-card bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl p-6 text-white shadow-lg shadow-blue-200">
-                            <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center mb-4">
-                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                </svg>
+                        <div class="stat-card bg-white rounded-2xl p-5 border border-[#3BA7A0]/20 shadow-sm">
+                            <div class="w-10 h-10 rounded-xl flex items-center justify-center mb-3" style="background:#E6F7F6">
+                                <svg class="w-5 h-5" style="color:#3BA7A0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                             </div>
-                            <p class="text-3xl font-extrabold" id="stat-users">--</p>
-                            <p class="text-blue-200 text-xs font-medium mt-1 uppercase tracking-wider">Users Reached</p>
+                            <p class="text-3xl font-extrabold text-slate-900" id="stat-users">--</p>
+                            <p class="text-xs font-semibold text-slate-400 mt-1 uppercase tracking-wide">Users Reached</p>
                         </div>
-
-                        <!-- Messages -->
-                        <div class="stat-card bg-gradient-to-br from-violet-600 to-purple-700 rounded-2xl p-6 text-white shadow-lg shadow-purple-200">
-                            <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center mb-4">
-                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
-                                </svg>
+                        <div class="stat-card bg-white rounded-2xl p-5 border border-[#3BA7A0]/20 shadow-sm">
+                            <div class="w-10 h-10 rounded-xl flex items-center justify-center mb-3" style="background:#E6F7F6">
+                                <svg class="w-5 h-5" style="color:#3BA7A0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
                             </div>
-                            <p class="text-3xl font-extrabold" id="stat-messages">--</p>
-                            <p class="text-purple-200 text-xs font-medium mt-1 uppercase tracking-wider">Messages Processed</p>
+                            <p class="text-3xl font-extrabold text-slate-900" id="stat-messages">--</p>
+                            <p class="text-xs font-semibold text-slate-400 mt-1 uppercase tracking-wide">Messages</p>
                         </div>
-
-                        <!-- AI Triage -->
-                        <div class="stat-card bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl p-6 text-white shadow-lg shadow-emerald-200">
-                            <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center mb-4">
-                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                                </svg>
+                        <div class="stat-card bg-white rounded-2xl p-5 border border-[#3BA7A0]/20 shadow-sm">
+                            <div class="w-10 h-10 rounded-xl flex items-center justify-center mb-3" style="background:#E6F7F6">
+                                <svg class="w-5 h-5" style="color:#3BA7A0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
                             </div>
-                            <p class="text-3xl font-extrabold" id="stat-ai">--</p>
-                            <p class="text-emerald-200 text-xs font-medium mt-1 uppercase tracking-wider">AI Interventions</p>
+                            <p class="text-3xl font-extrabold text-slate-900" id="stat-ai">--</p>
+                            <p class="text-xs font-semibold text-slate-400 mt-1 uppercase tracking-wide">AI Interventions</p>
                         </div>
-
-                        <!-- Active Emergencies -->
-                        <div class="stat-card bg-gradient-to-br from-red-500 to-rose-600 rounded-2xl p-6 text-white shadow-lg shadow-red-200">
-                            <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center mb-4">
-                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-                                </svg>
+                        <div class="stat-card bg-white rounded-2xl p-5 border border-red-200 shadow-sm">
+                            <div class="w-10 h-10 bg-red-50 rounded-xl flex items-center justify-center mb-3">
+                                <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                             </div>
-                            <p class="text-3xl font-extrabold" id="stat-emergencies">--</p>
-                            <p class="text-red-200 text-xs font-medium mt-1 uppercase tracking-wider">Active Emergencies</p>
+                            <p class="text-3xl font-extrabold text-red-600" id="stat-emergencies">--</p>
+                            <p class="text-xs font-semibold text-red-400 mt-1 uppercase tracking-wide">Active Emergencies</p>
                         </div>
                     </div>
                 </section>
 
-                <!-- Pending Approvals Section -->
-                <section id="approvals">
-                    <div class="flex items-center justify-between mb-6">
-                        <div>
-                            <h3 class="text-lg font-bold text-slate-900 flex items-center">
-                                Pending Counselor Approvals
-                                <span id="pending-count-badge" class="hidden ml-3 bg-red-500 text-white text-xs font-bold px-2.5 py-0.5 rounded-full pending-badge"></span>
-                            </h3>
-                            <p class="text-sm text-slate-500 mt-1">Review applicant credentials and approve or reject access.</p>
-                        </div>
-                    </div>
-
-                    <div id="pending-container">
-                        <!-- Cards will be injected here -->
-                        <div class="bg-white rounded-2xl border border-slate-200 p-10 text-center">
-                            <div class="w-8 h-8 border-2 border-slate-300 border-t-blue-500 rounded-full animate-spin mx-auto mb-4"></div>
-                            <p class="text-slate-400 text-sm">Loading applications...</p>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Footer Info Card -->
+                <!-- Charts Row -->
                 <section>
-                    <div class="bg-white rounded-2xl border border-slate-200 p-6 flex items-center space-x-4">
-                        <div class="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                            <svg class="w-6 h-6 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
-                            </svg>
+                    <h3 class="text-base font-bold text-slate-700 mb-4 uppercase tracking-wider text-xs">Performance Overview</h3>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Message Distribution Chart -->
+                        <div class="bg-white rounded-2xl border border-[#3BA7A0]/20 p-6 shadow-sm">
+                            <h4 class="font-bold text-slate-800 mb-1 text-sm">Message Distribution</h4>
+                            <p class="text-xs text-slate-400 mb-5">AI vs Mentor responses</p>
+                            <div class="h-48 flex items-center justify-center">
+                                <canvas id="messageChart"></canvas>
+                            </div>
                         </div>
-                        <div>
-                            <p class="text-sm font-semibold text-slate-700">Active Counselors: <span id="stat-mentors" class="text-blue-600">--</span></p>
-                            <p class="text-xs text-slate-500 mt-0.5">All counselors listed here have passed background verification and are cleared to access user data.</p>
+                        <!-- Mentor Performance Chart -->
+                        <div class="bg-white rounded-2xl border border-[#3BA7A0]/20 p-6 shadow-sm">
+                            <h4 class="font-bold text-slate-800 mb-1 text-sm">Counselor Activity</h4>
+                            <p class="text-xs text-slate-400 mb-5">Sessions handled per counselor</p>
+                            <div class="h-48">
+                                <canvas id="mentorChart"></canvas>
+                            </div>
                         </div>
                     </div>
                 </section>
-
             </div>
+
+            <!-- PENDING APPROVALS SECTION -->
+            <div id="section-approvals" class="hidden px-8 py-8 space-y-6">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-900 flex items-center">
+                        Pending Counselor Approvals
+                        <span id="pending-count-badge" class="hidden ml-3 bg-red-500 text-white text-xs font-bold px-2.5 py-0.5 rounded-full pending-badge"></span>
+                    </h3>
+                    <p class="text-sm text-slate-500 mt-1">Review professional credentials before granting access.</p>
+                </div>
+                <div id="pending-container">
+                    <div class="bg-white rounded-2xl border border-[#3BA7A0]/20 p-10 text-center">
+                        <div class="w-8 h-8 border-2 border-[#3BA7A0]/30 border-t-[#3BA7A0] rounded-full animate-spin mx-auto mb-4"></div>
+                        <p class="text-slate-400 text-sm">Loading applications...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- COUNSELOR TEAM SECTION -->
+            <div id="section-mentors" class="hidden px-8 py-8 space-y-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-900">Counselor Team</h3>
+                        <p class="text-sm text-slate-500 mt-1">Active counselors and their performance metrics.</p>
+                    </div>
+                    <span class="bg-[#E6F7F6] text-[#2C7C77] text-xs font-bold px-3 py-1.5 rounded-full border border-[#3BA7A0]/30" id="approved-count">-- Active</span>
+                </div>
+
+                <div class="bg-white rounded-2xl border border-[#3BA7A0]/20 shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead>
+                                <tr class="bg-[#E6F7F6] border-b border-[#3BA7A0]/20">
+                                    <th class="px-6 py-4 text-[10px] font-bold text-[#2C7C77] uppercase tracking-wider">Counselor</th>
+                                    <th class="px-6 py-4 text-[10px] font-bold text-[#2C7C77] uppercase tracking-wider">Specialization</th>
+                                    <th class="px-6 py-4 text-[10px] font-bold text-[#2C7C77] uppercase tracking-wider text-center">Sessions</th>
+                                    <th class="px-6 py-4 text-[10px] font-bold text-[#2C7C77] uppercase tracking-wider text-center">Clients</th>
+                                    <th class="px-6 py-4 text-[10px] font-bold text-[#2C7C77] uppercase tracking-wider text-center">Experience</th>
+                                    <th class="px-6 py-4 text-[10px] font-bold text-[#2C7C77] uppercase tracking-wider text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="mentors-list" class="divide-y divide-slate-100">
+                                <tr><td colspan="6" class="px-6 py-10 text-center text-slate-400 text-sm italic">Loading counselors...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
         </main>
     </div>
 
     <script>
         const token = localStorage.getItem("mentor_token");
+        let allMentors = [];
+        let systemStats = {};
+        let activePeriod = 'all';
+
+        function setPeriod(period) {
+            activePeriod = period;
+            document.querySelectorAll('.period-btn').forEach(btn => {
+                btn.classList.toggle('active-period', btn.dataset.period === period);
+            });
+        }
 
         function logout() {
             localStorage.removeItem("mentor_token");
             window.location.href = '/mentor';
         }
 
+        function showError(msg) {
+            document.getElementById('loading-overlay').classList.add('hidden');
+            document.getElementById('error-overlay').classList.remove('hidden');
+            document.getElementById('error-message').innerText = msg;
+        }
+
+        function showSection(name) {
+            ['analytics','approvals','mentors'].forEach(s => {
+                document.getElementById(`section-${s}`).classList.add('hidden');
+                document.getElementById(`nav-${s}`)?.classList.remove('active');
+            });
+            document.getElementById(`section-${name}`).classList.remove('hidden');
+            document.getElementById(`nav-${name}`)?.classList.add('active');
+            const titles = { analytics: ['Dashboard Overview', 'Live metrics & performance charts'], approvals: ['Pending Approvals', 'Vet and approve new counselor applications'], mentors: ['Counselor Team', 'Manage active counselors and view performance'] };
+            document.getElementById('page-title').innerText = titles[name][0];
+            document.getElementById('page-subtitle').innerText = titles[name][1];
+        }
+
         async function fetchStats() {
-            if (!token) {
-                showError("Please log in first.");
-                return;
-            }
-
+            if (!token) { showError("Please log in first."); return; }
             try {
-                const response = await fetch('/api/v1/admin/stats', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-
-                if (!response.ok) throw new Error(response.status);
-
-                const data = await response.json();
+                const res = await fetch('/api/v1/admin/stats', { headers: { 'Authorization': `Bearer ${token}` } });
+                if (!res.ok) throw new Error(res.status);
+                const data = await res.json();
                 const m = data.metrics;
-
+                systemStats = m;
                 document.getElementById('stat-users').innerText = m.total_users.toLocaleString();
                 document.getElementById('stat-messages').innerText = m.total_messages_processed.toLocaleString();
                 document.getElementById('stat-ai').innerText = m.total_ai_triage_responses.toLocaleString();
                 document.getElementById('stat-emergencies').innerText = m.active_emergencies;
-                document.getElementById('stat-mentors').innerText = m.registered_counselors;
                 document.getElementById('admin-name-display').innerText = data.admin?.name || 'Admin';
-
                 document.getElementById('loading-overlay').classList.add('hidden');
                 fetchPendingMentors();
-
+                fetchApprovedMentors();
             } catch (err) {
-                document.getElementById('loading-overlay').classList.add('hidden');
-                if (err.message === "403") {
-                    showError("You do not have Administrator privileges.");
-                } else if (err.message === "401") {
-                    showError("Your login session has expired. Please log in again.");
-                } else {
-                    showError("Could not connect to the server.");
-                }
+                if (err.message === "403") showError("You do not have Administrator privileges.");
+                else if (err.message === "401") showError("Session expired. Please log in again.");
+                else showError("Could not connect to server.");
             }
-        }
-
-        function showError(message) {
-            document.getElementById('loading-overlay').classList.add('hidden');
-            const errBox = document.getElementById('error-overlay');
-            errBox.classList.remove('hidden');
-            document.getElementById('error-message').innerText = message;
         }
 
         async function fetchPendingMentors() {
             try {
-                const res = await fetch('/api/v1/admin/pending-mentors', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                const res = await fetch('/api/v1/admin/pending-mentors', { headers: { 'Authorization': `Bearer ${token}` } });
                 if (!res.ok) return;
                 const mentors = await res.json();
                 renderPendingList(mentors);
-            } catch (e) { console.error(e); }
+            } catch(e) { console.error(e); }
+        }
+
+        async function fetchApprovedMentors() {
+            try {
+                const res = await fetch('/api/v1/admin/mentors', { headers: { 'Authorization': `Bearer ${token}` } });
+                if (!res.ok) return;
+                allMentors = await res.json();
+                renderMentorTable(allMentors);
+                renderCharts(allMentors);
+            } catch(e) { console.error(e); }
         }
 
         function renderPendingList(mentors) {
             const container = document.getElementById('pending-container');
-
             if (mentors.length === 0) {
-                container.innerHTML = `
-                    <div class="bg-white rounded-2xl border border-slate-200 p-10 text-center">
-                        <div class="w-14 h-14 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <svg class="w-7 h-7 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                        </div>
-                        <p class="font-semibold text-slate-700">All Caught Up!</p>
-                        <p class="text-slate-400 text-sm mt-1">No counselor applications are pending review.</p>
-                    </div>`;
+                container.innerHTML = `<div class="bg-white rounded-2xl border border-[#3BA7A0]/20 p-12 text-center card-enter">
+                    <div class="w-14 h-14 bg-[#E6F7F6] rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-7 h-7 text-[#3BA7A0]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    </div>
+                    <p class="font-bold text-slate-700">All Caught Up!</p>
+                    <p class="text-slate-400 text-sm mt-1">No pending applications at this time.</p>
+                </div>`;
                 document.getElementById('sidebar-badge').classList.add('hidden');
                 document.getElementById('pending-count-badge').classList.add('hidden');
                 return;
             }
-
-            // Show badges
             document.getElementById('sidebar-badge').classList.remove('hidden');
             const badge = document.getElementById('pending-count-badge');
             badge.innerText = `${mentors.length} Pending`;
             badge.classList.remove('hidden');
 
             container.innerHTML = `<div class="grid grid-cols-1 lg:grid-cols-2 gap-5" id="pending-cards"></div>`;
-            const cardsGrid = document.getElementById('pending-cards');
-
+            const grid = document.getElementById('pending-cards');
             mentors.forEach(m => {
                 const card = document.createElement('div');
-                card.className = 'bg-white rounded-2xl border border-amber-200 shadow-sm overflow-hidden';
+                card.className = 'bg-white rounded-2xl border border-amber-200 shadow-sm overflow-hidden card-enter';
                 card.innerHTML = `
                     <div class="bg-amber-50 border-b border-amber-100 px-5 py-3 flex items-center justify-between">
                         <span class="text-[10px] uppercase font-bold tracking-wider text-amber-700">⏳ Pending Review</span>
-                        <span class="text-[10px] text-slate-400">${m.created_at ? new Date(m.created_at).toLocaleDateString('en-KE', {day:'numeric', month:'short', year:'numeric'}) : 'N/A'}</span>
+                        <span class="text-[10px] text-slate-400">${m.created_at ? new Date(m.created_at).toLocaleDateString('en-KE', {day:'numeric',month:'short',year:'numeric'}) : 'N/A'}</span>
                     </div>
                     <div class="p-5">
                         <div class="flex items-start justify-between mb-4">
                             <div>
-                                <h4 class="font-bold text-slate-900 text-base">${m.name}</h4>
+                                <h4 class="font-bold text-slate-900">${m.name}</h4>
                                 <p class="text-xs text-slate-500">${m.email}</p>
-                                <p class="text-xs text-slate-400 mt-0.5">${m.phone || 'No phone provided'}</p>
+                                <p class="text-xs text-slate-400 mt-0.5">${m.phone || 'No phone'}</p>
                             </div>
-                            <div class="text-right flex-shrink-0 ml-4">
-                                <span class="inline-block bg-blue-100 text-blue-700 text-xs font-semibold px-3 py-1 rounded-full">${m.specialization || 'Unspecified'}</span>
-                                <p class="text-xs text-slate-400 mt-2">${m.experience || 0} yrs exp.</p>
+                            <div class="text-right ml-4">
+                                <span class="inline-block bg-[#E6F7F6] text-[#2C7C77] text-xs font-bold px-3 py-1 rounded-full">${m.specialization || 'General'}</span>
+                                <p class="text-xs text-slate-400 mt-2">${m.experience || 0} yr exp.</p>
                             </div>
                         </div>
-
                         <div class="bg-slate-50 rounded-xl p-4 mb-5">
-                            <div class="flex items-center justify-between mb-2">
-                                <span class="text-[10px] text-indigo-600 font-bold uppercase tracking-wider">License:</span>
+                            <div class="flex justify-between mb-2">
+                                <span class="text-[10px] text-[#2C7C77] font-bold uppercase">License</span>
                                 <span class="text-xs font-semibold text-slate-700 font-mono">${m.license || 'Not provided'}</span>
                             </div>
-                            <p class="text-xs text-slate-500 italic leading-relaxed border-t border-slate-200 pt-3 mt-2">"${m.bio || 'No bio provided.'}"</p>
+                            <p class="text-xs text-slate-500 italic border-t border-slate-200 pt-3 mt-2 leading-relaxed">"${m.bio || 'No bio provided.'}"</p>
                         </div>
-
                         <div class="flex space-x-3">
-                            <button onclick="approveMentor(${m.id}, this)" class="flex-1 py-2.5 bg-green-600 hover:bg-green-700 text-white text-sm font-bold rounded-xl transition shadow-sm shadow-green-200">
-                                ✓ Approve Access
-                            </button>
-                            <button onclick="rejectMentor(${m.id}, this)" class="flex-1 py-2.5 bg-white border border-red-200 hover:bg-red-50 text-red-600 text-sm font-bold rounded-xl transition">
-                                ✗ Reject
-                            </button>
+                            <button onclick="approveMentor(${m.id}, this)" class="flex-1 py-2.5 bg-[#3BA7A0] hover:bg-[#2C7C77] text-white text-sm font-bold rounded-xl transition">✓ Approve</button>
+                            <button onclick="rejectMentor(${m.id}, this)" class="flex-1 py-2.5 bg-white border border-red-200 hover:bg-red-50 text-red-600 text-sm font-bold rounded-xl transition">✗ Reject</button>
                         </div>
-                    </div>
-                `;
-                cardsGrid.appendChild(card);
+                    </div>`;
+                grid.appendChild(card);
+            });
+        }
+
+        function renderMentorTable(mentors) {
+            document.getElementById('approved-count').innerText = `${mentors.length} Active`;
+            const tbody = document.getElementById('mentors-list');
+            if (mentors.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-10 text-center text-slate-400 text-sm italic">No active counselors yet.</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = '';
+            mentors.forEach(m => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-[#E6F7F6]/50 transition-colors';
+                const perf = m.sessions_handled > 5 ? '🟢 Active' : m.sessions_handled > 0 ? '🟡 Low' : '⚪ Inactive';
+                tr.innerHTML = `
+                    <td class="px-6 py-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0" style="background:#3BA7A0">${m.name.charAt(0)}</div>
+                            <div>
+                                <div class="text-sm font-bold text-slate-900">${m.name}</div>
+                                <div class="text-xs text-slate-400">${m.email}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="text-xs font-medium text-slate-600 bg-slate-100 px-2 py-1 rounded-lg">${m.specialization || 'General'}</span>
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        <span class="text-sm font-bold text-slate-800">${m.sessions_handled}</span>
+                        <div class="text-[10px] text-slate-400">${perf}</div>
+                    </td>
+                    <td class="px-6 py-4 text-center text-sm text-slate-700">${m.clients_served}</td>
+                    <td class="px-6 py-4 text-center text-sm text-slate-600">${m.experience} yrs</td>
+                    <td class="px-6 py-4 text-right">
+                        <button onclick="removeMentor(${m.id}, '${m.name}', this)" class="px-3 py-1.5 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg transition">Remove</button>
+                    </td>`;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderCharts(mentors) {
+            // Donut chart: message distribution
+            const totalMsgs = systemStats.total_messages_processed || 0;
+            const aiMsgs = systemStats.total_ai_triage_responses || 0;
+            const userMsgs = Math.max(0, totalMsgs - aiMsgs);
+
+            const ctx1 = document.getElementById('messageChart').getContext('2d');
+            if (window.msgChart) window.msgChart.destroy();
+            window.msgChart = new Chart(ctx1, {
+                type: 'doughnut',
+                data: {
+                    labels: ['User Messages', 'AI Responses', 'Mentor Responses'],
+                    datasets: [{ data: [userMsgs, aiMsgs, totalMsgs - userMsgs - aiMsgs + (mentors.reduce((a,m) => a+m.sessions_handled, 0))], backgroundColor: ['#3BA7A0','#2C7C77','#7DC5C1'], borderWidth: 0 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 11 } } } } }
+            });
+
+            // Bar chart: mentor sessions
+            const ctx2 = document.getElementById('mentorChart').getContext('2d');
+            if (window.barChart) window.barChart.destroy();
+            window.barChart = new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: mentors.map(m => m.name.split(' ')[0]),
+                    datasets: [
+                        { label: 'Sessions Handled', data: mentors.map(m => m.sessions_handled), backgroundColor: '#3BA7A0', borderRadius: 6 },
+                        { label: 'Clients Served', data: mentors.map(m => m.clients_served), backgroundColor: '#E6F7F6', borderRadius: 6 }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { boxWidth: 10, font: { size: 11 } } } }, scales: { x: { grid: { display: false } }, y: { grid: { color: '#f1f5f9' }, ticks: { precision: 0 } } } }
             });
         }
 
         async function approveMentor(id, btn) {
-            if (!confirm("Approve this counselor? They will gain immediate access to user data.")) return;
-            btn.disabled = true;
-            btn.innerText = "Approving...";
-            try {
-                const res = await fetch(`/api/v1/admin/approve-mentor/${id}`, {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (res.ok) { fetchStats(); }
-                else { btn.disabled = false; btn.innerText = "✓ Approve Access"; alert("Failed to approve. Try again."); }
-            } catch (e) { console.error(e); }
+            if (!confirm("Approve this counselor?")) return;
+            btn.disabled = true; btn.innerText = "Approving...";
+            const res = await fetch(`/api/v1/admin/approve-mentor/${id}`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+            if (res.ok) fetchStats();
+            else { btn.disabled = false; btn.innerText = "✓ Approve"; }
         }
 
         async function rejectMentor(id, btn) {
-            if (!confirm("Reject and permanently DELETE this application? This cannot be undone.")) return;
+            if (!confirm("Reject and permanently delete this application?")) return;
+            btn.disabled = true; btn.innerText = "Rejecting...";
+            const res = await fetch(`/api/v1/admin/reject-mentor/${id}`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+            if (res.ok) fetchStats();
+            else { btn.disabled = false; btn.innerText = "✗ Reject"; }
+        }
+
+        async function removeMentor(id, name, btn) {
+            if (!confirm(`Remove ${name} from the system? This will permanently delete their account.`)) return;
+            btn.disabled = true; btn.innerText = "Removing...";
+            const res = await fetch(`/api/v1/admin/mentors/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+            if (res.ok) fetchApprovedMentors();
+            else { btn.disabled = false; btn.innerText = "Remove"; alert("Failed to remove. Try again."); }
+        }
+
+        async function downloadReport() {
+            const btn = document.getElementById('download-btn');
+            const originalHTML = btn.innerHTML;
+            btn.innerText = 'Generating...';
             btn.disabled = true;
-            btn.innerText = "Rejecting...";
             try {
-                const res = await fetch(`/api/v1/admin/reject-mentor/${id}`, {
-                    method: 'POST',
+                const res = await fetch(`/api/v1/admin/download-report?period=${activePeriod}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
-                if (res.ok) { fetchStats(); }
-                else { btn.disabled = false; btn.innerText = "✗ Reject"; alert("Failed to reject. Try again."); }
-            } catch (e) { console.error(e); }
+                if (!res.ok) throw new Error('Failed');
+                const blob = await res.blob();
+                const filename = `jootrh_report_${new Date().toISOString().slice(0,10)}.csv`;
+                const url = window.URL.createObjectURL(new Blob([blob], { type: 'text/csv' }));
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', filename);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+            } catch (e) {
+                console.error(e);
+                alert('Failed to download report. Please try again.');
+            } finally {
+                btn.innerHTML = originalHTML;
+                btn.disabled = false;
+            }
         }
 
         fetchStats();

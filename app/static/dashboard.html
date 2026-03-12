@@ -362,8 +362,12 @@
                     if (res.ok) {
                         localStorage.setItem("mentor_token", data.access_token);
                         token = data.access_token;
-                        document.getElementById('auth-overlay').classList.add('hidden');
-                        checkAuth();
+                        if (currentView === 'admin') {
+                            window.location.href = '/admin';
+                        } else {
+                            document.getElementById('auth-overlay').classList.add('hidden');
+                            checkAuth();
+                        }
                     } else {
                         errorMsg.innerText = data.detail || "Invalid credentials.";
                     }
