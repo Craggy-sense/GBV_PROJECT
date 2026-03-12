@@ -45,19 +45,46 @@ def get_mentor_by_email(db: Session, email: str):
     return db.query(models.Mentor).filter(models.Mentor.email == email).first()
 
 def get_escalated_queues(db: Session):
-    """Fetch all users who are currently flagged for human intervention."""
+    """Fetch all users currently flagged for human intervention, including claim status."""
     escalated_users = db.query(models.WhatsAppUser).filter(models.WhatsAppUser.is_escalated == True).all()
     queue = []
-    
     for user in escalated_users:
         messages = db.query(models.ChatMessage).filter(models.ChatMessage.user_id == user.id).order_by(models.ChatMessage.timestamp.asc()).all()
         history = [{"role": msg.role, "content": msg.content} for msg in messages]
         queue.append({
             "phone_number": user.phone_number,
-            "history": history
+            "history": history,
+            "claimed_by_mentor_id": user.claimed_by_mentor_id,
+            "claimed_by_name": user.claimed_by.name if user.claimed_by else None,
+            "claimed_at": user.claimed_at.isoformat() if user.claimed_at else None,
         })
-        
     return queue
+
+def claim_user_for_mentor(db: Session, phone_number: str, mentor_id: int) -> bool:
+    """Try to claim a user for a mentor. Returns True if successful, False if already claimed by someone else."""
+    user = db.query(models.WhatsAppUser).filter(models.WhatsAppUser.phone_number == phone_number).first()
+    if not user:
+        return False
+    # Already claimed by this mentor – OK
+    if user.claimed_by_mentor_id == mentor_id:
+        return True
+    # Already claimed by a different mentor – refuse
+    if user.claimed_by_mentor_id is not None:
+        return False
+    # Unclaimed – claim it
+    user.claimed_by_mentor_id = mentor_id
+    user.claimed_at = datetime.utcnow()
+    db.commit()
+    return True
+
+def release_claim(db: Session, phone_number: str):
+    """Release the claim on a user, clearing both escalation and claim."""
+    user = db.query(models.WhatsAppUser).filter(models.WhatsAppUser.phone_number == phone_number).first()
+    if user:
+        user.claimed_by_mentor_id = None
+        user.claimed_at = None
+        user.is_escalated = False
+        db.commit()
 def get_pending_mentors(db: Session):
     """Fetch all mentors who are waiting for admin approval."""
     return db.query(models.Mentor).filter(models.Mentor.is_approved == False).all()

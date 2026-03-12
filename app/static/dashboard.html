@@ -7,128 +7,144 @@
     <title>JOOTRH GBV Mentor Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .chat-container {
-            height: calc(100vh - 200px);
-        }
-
+        .chat-container { height: calc(100vh - 200px); }
         .message-user {
-            background-color: #e2e8f0;
+            background-color: #E6F7F6;
             border-radius: 1rem 1rem 1rem 0;
             margin-right: auto;
         }
-
         .message-assistant {
-            background-color: #3b82f6;
+            background-color: #3BA7A0;
             color: white;
             border-radius: 1rem 1rem 0 1rem;
             margin-left: auto;
         }
-
         .message-mentor {
-            background-color: #10b981;
+            background-color: #2C7C77;
             color: white;
             border-radius: 1rem 1rem 0 1rem;
             margin-left: auto;
         }
+        .queue-item:hover { background: #E6F7F6; border-color: #3BA7A0; }
+        .queue-item.active { background: #E6F7F6; border-left: 3px solid #3BA7A0; }
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-thumb { background: rgba(59,167,160,0.3); border-radius: 6px; }
     </style>
 </head>
 
-<body class="bg-slate-50 flex h-screen overflow-hidden text-slate-800">
+<body class="bg-[#E6F7F6] flex h-screen overflow-hidden text-slate-800" style="font-family:'Inter',sans-serif">
 
     <!-- Sidebar: Queue List -->
-    <div class="w-1/3 max-w-sm bg-white border-r border-slate-200 flex flex-col">
-        <div class="p-6 border-b border-slate-200 bg-slate-800 text-white shadow-sm">
-            <h1 class="text-xl font-bold tracking-wide">Mentor Terminal</h1>
-            <p class="text-sm text-slate-300 mt-1">Active Escalations & Alerts</p>
-            <button onclick="fetchQueue()"
-                class="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded text-sm font-semibold transition flex items-center justify-center w-full shadow">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
-                    </path>
-                </svg>
-                Refresh Queue
+    <div class="w-72 bg-[#1a2f2e] border-r border-white/5 flex flex-col">
+        <div class="p-5 border-b border-white/10">
+            <div class="flex items-center space-x-3 mb-4">
+                <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:#3BA7A0">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+                </div>
+                <div>
+                    <h1 class="text-sm font-bold text-white">JooTRH Counselor</h1>
+                    <p class="text-[10px] text-slate-400 uppercase tracking-wider">Crisis Triage Terminal</p>
+                </div>
+            </div>
+            <!-- Personal Stats -->
+            <div class="grid grid-cols-3 gap-2 mb-4">
+                <div class="bg-white/5 rounded-xl p-3 text-center">
+                    <p class="text-lg font-extrabold text-[#3BA7A0]" id="stat-sessions">--</p>
+                    <p class="text-[9px] text-slate-400 uppercase tracking-wide mt-0.5">Sessions</p>
+                </div>
+                <div class="bg-white/5 rounded-xl p-3 text-center">
+                    <p class="text-lg font-extrabold text-[#3BA7A0]" id="stat-clients">--</p>
+                    <p class="text-[9px] text-slate-400 uppercase tracking-wide mt-0.5">Clients</p>
+                </div>
+                <div class="bg-white/5 rounded-xl p-3 text-center">
+                    <p class="text-lg font-extrabold text-red-400" id="stat-active">--</p>
+                    <p class="text-[9px] text-slate-400 uppercase tracking-wide mt-0.5">Active</p>
+                </div>
+            </div>
+            <button onclick="fetchQueue()" class="w-full py-2 bg-[#3BA7A0] hover:bg-[#2C7C77] text-white text-xs font-bold rounded-xl transition flex items-center justify-center space-x-2">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                <span>Refresh Queue</span>
             </button>
         </div>
-
-        <div id="queue-list" class="flex-1 overflow-y-auto p-4 space-y-3">
-            <!-- Queue items will be injected here -->
-            <p class="text-slate-500 text-center text-sm italic mt-10">Loading queue...</p>
+        <div id="queue-list" class="flex-1 overflow-y-auto p-3 space-y-2">
+            <p class="text-slate-500 text-center text-xs italic mt-10">Loading queue...</p>
         </div>
     </div>
 
     <!-- Main Content: Chat History & Reply Box -->
-    <div class="flex-1 flex flex-col bg-slate-50">
+    <div class="flex-1 flex flex-col bg-white">
         <!-- Header -->
         <header class="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center shadow-sm z-10">
             <div>
-                <h1
-                    class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">
-                    Mentor Dashboard</h1>
-                <p class="text-sm text-slate-500">Live GBV & Mental Health Crisis Triage</p>
+                <h1 class="text-xl font-bold" style="background:linear-gradient(90deg,#3BA7A0,#2C7C77);-webkit-background-clip:text;-webkit-text-fill-color:transparent">Counselor Dashboard</h1>
+                <p class="text-xs text-slate-500">GBV & Mental Health Crisis Triage — Live Queue</p>
             </div>
             <div class="flex items-center space-x-4">
-                <a href="/admin" id="admin-link"
-                    class="hidden text-sm font-medium text-indigo-600 hover:text-indigo-800 transition">View
-                    Analytics</a>
+                <a href="/admin" id="admin-link" class="hidden text-xs font-bold px-3 py-1.5 rounded-xl transition" style="background:#E6F7F6;color:#2C7C77">Admin Hub</a>
                 <div class="text-right">
                     <p class="text-sm font-semibold text-slate-700" id="mentor-name-display">Loading...</p>
-                    <button onclick="logout()"
-                        class="text-xs text-red-500 hover:text-red-700 hover:underline transition">Sign Out</button>
+                    <p class="text-[10px] text-slate-400" id="mentor-spec-display">Counselor</p>
                 </div>
-                <div class="flex items-center space-x-2 bg-green-50 px-3 py-1.5 rounded-full border border-green-100">
-                    <span class="relative flex h-3 w-3">
-                        <span
-                            class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                        <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                <button onclick="logout()" class="text-xs font-bold px-3 py-1.5 rounded-xl text-red-500 bg-red-50 hover:bg-red-100 transition">Sign Out</button>
+                <div class="flex items-center space-x-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border" style="color:#2C7C77;background:#E6F7F6;border-color:rgba(59,167,160,0.3)">
+                    <span class="relative flex h-2 w-2">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style="background:#3BA7A0"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2" style="background:#3BA7A0"></span>
                     </span>
-                    <span class="text-sm font-medium text-green-700">System Online</span>
+                    System Online
                 </div>
             </div>
         </header>
-        <!-- Inner Chat Header -->
-        <div class="p-6 border-b border-slate-200 bg-white flex justify-between items-center shadow-sm z-10">
+
+        <!-- Chat header -->
+        <div class="px-6 py-4 border-b border-slate-100 bg-white flex justify-between items-center">
             <div>
-                <h2 id="current-user-title" class="text-xl font-bold text-slate-800">Select a case</h2>
-                <p id="current-user-status" class="text-sm text-slate-500">Waiting for selection... (Queue updates every
-                    5s)</p>
+                <h2 id="current-user-title" class="text-lg font-bold text-slate-800">Select a case</h2>
+                <p id="current-user-status" class="text-xs text-slate-400">Waiting for selection... (Queue updates every 5s)</p>
             </div>
-            <button id="resolve-btn" onclick="resolveSession()"
-                class="hidden px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded font-semibold text-sm transition shadow">
-                Release lock & Return to AI
+            <button id="resolve-btn" onclick="resolveSession()" class="hidden px-4 py-2 text-white text-sm font-bold rounded-xl transition shadow-sm" style="background:#3BA7A0" onmouseover="this.style.background='#2C7C77'" onmouseout="this.style.background='#3BA7A0'">
+                ✓ Release & Return to AI
             </button>
         </div>
 
         <!-- Chat History -->
-        <div id="chat-history" class="chat-container overflow-y-auto p-6 space-y-4">
-            <!-- Messages will be injected here -->
-            <div class="flex items-center justify-center h-full text-slate-400">
-                <p>No chat history to display. Select a user from the queue.</p>
+        <div id="chat-history" class="chat-container overflow-y-auto p-6 space-y-4 bg-[#f8fffe]">
+            <div class="flex items-center justify-center h-full">
+                <div class="text-center">
+                    <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style="background:#E6F7F6">
+                        <svg class="w-8 h-8" style="color:#3BA7A0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                    </div>
+                    <p class="font-semibold text-slate-600">No case selected</p>
+                    <p class="text-xs text-slate-400 mt-1">Choose a client from the queue to view their chat history.</p>
+                </div>
             </div>
         </div>
 
         <!-- Compose Box -->
         <div class="p-4 bg-white border-t border-slate-200">
-            <div class="max-w-4xl mx-auto flex space-x-4">
+            <div class="flex space-x-3">
                 <input type="text" id="reply-input" disabled
-                    class="flex-1 border border-slate-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-100 disabled:cursor-not-allowed"
-                    placeholder="Type your mentor reply here... (Sends directly via WhatsApp)">
+                    class="flex-1 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#3BA7A0] disabled:bg-slate-50 disabled:cursor-not-allowed"
+                    placeholder="Type your reply... (sends directly via WhatsApp)">
                 <button id="send-btn" disabled onclick="sendReply()"
-                    class="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 text-white font-bold rounded-lg transition shadow-md flex items-center">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
-                    </svg>
+                    class="px-5 py-3 disabled:bg-slate-300 text-white font-bold rounded-xl transition flex items-center" style="background:#3BA7A0"
+                    onmouseover="if(!this.disabled)this.style.background='#2C7C77'" onmouseout="if(!this.disabled)this.style.background='#3BA7A0'">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
                 </button>
             </div>
         </div>
     </div>
 
     <!-- Authentication Overlay -->
-    <div id="auth-overlay"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/90 backdrop-blur-sm hidden p-4">
-        <div id="auth-container"
-            class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all">
+    <div id="auth-overlay" class="fixed inset-0 z-50 flex items-center justify-center bg-[#1a2f2e]/95 backdrop-blur-sm hidden p-4">
+        <!-- Close / Back to Home button -->
+        <a href="/" class="absolute top-6 right-6 flex items-center space-x-2 text-slate-400 hover:text-white transition group" title="Back to Home">
+            <span class="text-xs font-semibold group-hover:underline">Back to Home</span>
+            <div class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition">
+                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </div>
+        </a>
+        <div id="auth-container" class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all">
             <div class="p-8">
                 <!-- Header -->
                 <div class="text-center mb-6">
@@ -264,6 +280,7 @@
         let currentPhone = null;
         let escalationsCache = [];
         let token = localStorage.getItem("mentor_token");
+        let currentMentorId = null;
 
         // Auth Flow
         function checkAuth() {
@@ -426,6 +443,7 @@
 
         async function fetchMe() {
             try {
+                // Fetch basic profile
                 const res = await fetch('/api/v1/auth/me', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -435,6 +453,20 @@
                     if (data.is_admin) {
                         document.getElementById('admin-link').classList.remove('hidden');
                     }
+                }
+
+                // Fetch personal performance stats
+                const statsRes = await fetch('/api/v1/mentor/me/stats', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (statsRes.ok) {
+                    const s = await statsRes.json();
+                    currentMentorId = s.mentor_id;
+                    document.getElementById('stat-sessions').innerText = s.sessions_handled;
+                    document.getElementById('stat-clients').innerText = s.clients_served;
+                    document.getElementById('stat-active').innerText = s.active_escalations;
+                    const specEl = document.getElementById('mentor-spec-display');
+                    if (specEl) specEl.innerText = s.specialization || 'Counselor';
                 }
             } catch (e) { console.error(e); }
         }
@@ -486,14 +518,25 @@
                 const lastMsg = escalation.history[escalation.history.length - 1];
                 let snippet = lastMsg ? lastMsg.content.substring(0, 40) + "..." : "No messages";
 
+                let claimBadge = '<span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>';
+                if (escalation.claimed_by_mentor_id) {
+                    if (escalation.claimed_by_mentor_id === currentMentorId) {
+                        claimBadge = '<span class="text-[9px] px-1.5 py-0.5 bg-[#E6F7F6] text-[#2C7C77] rounded font-bold border border-[#3BA7A0]">My Case</span>';
+                    } else {
+                        const mentorName = escalation.claimed_by_name ? escalation.claimed_by_name.split(' ')[0] : 'another counselor';
+                        claimBadge = `<span class="text-[9px] px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded font-bold border border-slate-200" title="Taken by ${escalation.claimed_by_name}">Taken by ${mentorName}</span>`;
+                    }
+                }
+
+                const opacityClass = (escalation.claimed_by_mentor_id && escalation.claimed_by_mentor_id !== currentMentorId) ? 'opacity-60' : '';
                 const card = document.createElement('div');
-                card.className = `p-4 border rounded-lg cursor-pointer transition ${isSelected ? 'bg-blue-50 border-blue-400 shadow-sm' : 'bg-white border-slate-200 hover:bg-slate-50'}`;
+                card.className = `p-4 border rounded-lg cursor-pointer transition ${isSelected ? 'bg-blue-50 border-blue-400 shadow-sm' : 'bg-white border-slate-200 hover:bg-slate-50'} ${opacityClass}`;
                 card.onclick = () => selectUser(escalation.phone_number);
 
                 card.innerHTML = `
                     <div class="flex justify-between items-center mb-1">
                         <h3 class="font-bold text-slate-800 text-sm">${escalation.phone_number.replace('whatsapp:', '')}</h3>
-                        <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                        ${claimBadge}
                     </div>
                     <p class="text-xs text-slate-500 truncate">${snippet}</p>
                 `;
@@ -506,14 +549,32 @@
             const activeCase = escalationsCache.find(c => c.phone_number === phone);
 
             document.getElementById('current-user-title').innerText = phone.replace('whatsapp:', '');
-            document.getElementById('current-user-status').innerText = "Active Emergency Handoff";
-            document.getElementById('resolve-btn').classList.remove('hidden');
-            document.getElementById('reply-input').disabled = false;
-            document.getElementById('send-btn').disabled = false;
+
+            const isClaimedByMe = activeCase.claimed_by_mentor_id === currentMentorId;
+            const isClaimedByOther = activeCase.claimed_by_mentor_id && !isClaimedByMe;
+
+            if (isClaimedByOther) {
+                document.getElementById('current-user-status').innerText = `Claimed by ${activeCase.claimed_by_name}. You cannot reply.`;
+                document.getElementById('resolve-btn').classList.add('hidden');
+                document.getElementById('reply-input').disabled = true;
+                document.getElementById('send-btn').disabled = true;
+                document.getElementById('reply-input').placeholder = "Case handled by another counselor.";
+            } else {
+                if (isClaimedByMe) {
+                    document.getElementById('current-user-status').innerText = "You have claimed this case. (Reply to continue)";
+                    document.getElementById('resolve-btn').classList.remove('hidden');
+                } else {
+                    document.getElementById('current-user-status').innerText = "Unclaimed Emergency. (Replying will claim it)";
+                    document.getElementById('resolve-btn').classList.add('hidden'); // Only show when claimed
+                }
+                document.getElementById('reply-input').disabled = false;
+                document.getElementById('send-btn').disabled = false;
+                document.getElementById('reply-input').placeholder = "Type your reply... (sends directly via WhatsApp)";
+            }
 
             renderChat(activeCase.history);
             renderQueue();
-            document.getElementById('reply-input').focus();
+            if (!isClaimedByOther) document.getElementById('reply-input').focus();
         }
 
         function renderChat(history) {
@@ -569,6 +630,12 @@
                 });
 
                 if (res.status === 401) { logout(); return; }
+                if (res.status === 409) {
+                    const errObj = await res.json();
+                    alert(errObj.detail);
+                    await fetchQueue();
+                    return;
+                }
 
                 if (res.ok) {
                     input.value = '';

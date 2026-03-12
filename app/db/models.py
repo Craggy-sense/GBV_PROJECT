@@ -25,9 +25,12 @@ class WhatsAppUser(Base):
     id = Column(Integer, primary_key=True, index=True)
     phone_number = Column(String, unique=True, index=True, nullable=False)
     is_escalated = Column(Boolean, default=False)
+    claimed_by_mentor_id = Column(Integer, ForeignKey("mentors.id"), nullable=True)  # Who claimed this case
+    claimed_at = Column(DateTime, nullable=True)  # When it was claimed
     created_at = Column(DateTime, default=datetime.utcnow)
-    
+
     messages = relationship("ChatMessage", back_populates="user", cascade="all, delete-orphan")
+    claimed_by = relationship("Mentor", foreign_keys=[claimed_by_mentor_id])
 
 class ChatMessage(Base):
     __tablename__ = "chat_messages"
