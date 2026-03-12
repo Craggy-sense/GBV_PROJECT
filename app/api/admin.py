@@ -40,3 +40,47 @@ async def get_admin_statistics(
             "registered_counselors": total_mentors
         }
     }
+@router.get("/pending-mentors")
+async def get_pending_counselors(
+    db: Session = Depends(get_db),
+    admin: models.Mentor = Depends(security.get_current_active_admin)
+):
+    """List all mentors awaiting approval."""
+    from app.db import crud
+    pending = crud.get_pending_mentors(db)
+    return [
+        {
+            "id": m.id, 
+            "name": m.name, 
+            "email": m.email, 
+            "phone": m.phone_number, 
+            "specialization": m.specialization,
+            "experience": m.experience_years,
+            "bio": m.bio,
+            "license": m.license_number,
+            "created_at": m.created_at
+        } 
+        for m in pending
+    ]
+
+@router.post("/approve-mentor/{mentor_id}")
+async def approve_counselor(
+    mentor_id: int,
+    db: Session = Depends(get_db),
+    admin: models.Mentor = Depends(security.get_current_active_admin)
+):
+    """Approve a counselor application."""
+    from app.db import crud
+    mentor = crud.approve_mentor(db, mentor_id)
+    return {"status": "success", "message": f"Mentor {mentor.name} approved."}
+
+@router.post("/reject-mentor/{mentor_id}")
+async def reject_counselor(
+    mentor_id: int,
+    db: Session = Depends(get_db),
+    admin: models.Mentor = Depends(security.get_current_active_admin)
+):
+    """Reject and delete a counselor application."""
+    from app.db import crud
+    success = crud.delete_mentor(db, mentor_id)
+    return {"status": "success", "message": "Mentor application rejected."}

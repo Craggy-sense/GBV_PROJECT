@@ -58,3 +58,24 @@ def get_escalated_queues(db: Session):
         })
         
     return queue
+def get_pending_mentors(db: Session):
+    """Fetch all mentors who are waiting for admin approval."""
+    return db.query(models.Mentor).filter(models.Mentor.is_approved == False).all()
+
+def approve_mentor(db: Session, mentor_id: int):
+    """Approve a mentor by their ID."""
+    mentor = db.query(models.Mentor).filter(models.Mentor.id == mentor_id).first()
+    if mentor:
+        mentor.is_approved = True
+        db.commit()
+        db.refresh(mentor)
+    return mentor
+
+def delete_mentor(db: Session, mentor_id: int):
+    """Reject/Delete a mentor application."""
+    mentor = db.query(models.Mentor).filter(models.Mentor.id == mentor_id).first()
+    if mentor:
+        db.delete(mentor)
+        db.commit()
+        return True
+    return False

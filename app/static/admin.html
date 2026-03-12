@@ -1,146 +1,207 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JooTRH Admin Analytics</title>
+    <title>JooTRH Admin Hub</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .stat-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .stat-card:hover { transform: translateY(-2px); }
+        .pending-badge { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 6px; }
+    </style>
 </head>
 
-<body class="bg-slate-50 min-h-screen text-slate-800 font-sans">
+<body class="bg-slate-100 min-h-screen text-slate-800">
 
-    <!-- Auth Protection -->
-    <div id="loading-overlay" class="fixed inset-0 bg-white z-50 flex items-center justify-center">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+    <!-- Auth Protection Overlays -->
+    <div id="loading-overlay" class="fixed inset-0 bg-slate-900 z-50 flex flex-col items-center justify-center">
+        <div class="w-16 h-16 border-4 border-slate-700 border-t-blue-500 rounded-full animate-spin mb-6"></div>
+        <p class="text-slate-400 text-sm font-medium tracking-widest uppercase">Verifying Access...</p>
     </div>
 
-    <div id="error-overlay" class="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center hidden">
-        <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
-            <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z">
-                </path>
-            </svg>
+    <div id="error-overlay" class="fixed inset-0 bg-slate-900 z-50 flex flex-col items-center justify-center hidden">
+        <div class="bg-slate-800 rounded-3xl p-12 max-w-sm w-full text-center shadow-2xl">
+            <div class="w-20 h-20 bg-red-900/40 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg class="w-10 h-10 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                </svg>
+            </div>
+            <h2 class="text-2xl font-bold text-white mb-2">Access Denied</h2>
+            <p class="text-slate-400 mb-8 text-sm leading-relaxed" id="error-message">You do not have administrator privileges.</p>
+            <a href="/mentor" class="block w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold transition text-sm">Go to Mentor Dashboard</a>
         </div>
-        <h2 class="text-2xl font-bold text-slate-800 mb-2">Access Denied</h2>
-        <p class="text-slate-500 mb-6" id="error-message">You do not have Administrator privileges.</p>
-        <a href="/mentor" class="text-indigo-600 hover:underline font-medium">Return to Mentor Dashboard</a>
     </div>
 
-    <!-- Navigation -->
-    <nav
-        class="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center shadow-sm sticky top-0 z-10">
-        <div class="flex items-center space-x-3">
-            <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-800 to-slate-600">
-                Admin Control Center</h1>
-        </div>
-        <div class="flex items-center space-x-4">
-            <a href="/mentor" class="text-sm font-medium text-slate-600 hover:text-indigo-600 transition">Dashboard</a>
-            <button onclick="logout()" class="text-sm text-red-500 hover:underline">Sign Out</button>
-        </div>
-    </nav>
+    <!-- Layout Wrapper -->
+    <div class="flex min-h-screen">
 
-    <!-- Main Content -->
-    <main class="max-w-7xl mx-auto px-6 py-8">
-        <div class="mb-8">
-            <h2 class="text-2xl font-bold text-slate-900">System Overview</h2>
-            <p class="text-slate-500 mt-1">Live metrics from the GBV & Mental Health Support Chatbot.</p>
-        </div>
+        <!-- Sidebar -->
+        <aside class="w-64 bg-slate-900 text-white flex flex-col flex-shrink-0 min-h-screen sticky top-0 h-screen">
+            <!-- Logo -->
+            <div class="px-6 py-8 border-b border-slate-800">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-white text-sm">JooTRH Admin</h1>
+                        <p class="text-slate-500 text-xs">Control Center</p>
+                    </div>
+                </div>
+            </div>
 
-        <!-- Metric Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <!-- Total Users -->
-            <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+            <!-- Nav Links -->
+            <nav class="flex-1 px-4 py-6 space-y-1">
+                <a href="#analytics" class="flex items-center space-x-3 px-4 py-3 rounded-xl bg-blue-600/20 text-blue-400 font-medium text-sm">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                    <span>Analytics</span>
+                </a>
+                <a href="#approvals" class="flex items-center justify-between px-4 py-3 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 font-medium text-sm transition">
+                    <div class="flex items-center space-x-3">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                        <span>Counselor Approvals</span>
+                    </div>
+                    <span id="sidebar-badge" class="hidden bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full pending-badge">!</span>
+                </a>
+                <a href="/mentor" class="flex items-center space-x-3 px-4 py-3 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 font-medium text-sm transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                    <span>Mentor Terminal</span>
+                </a>
+            </nav>
+
+            <!-- Admin User -->
+            <div class="px-6 py-6 border-t border-slate-800">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">Total Users Reached</p>
-                        <p class="text-3xl font-extrabold text-slate-900 mt-2" id="stat-users">--</p>
+                        <p class="text-xs font-semibold text-white" id="admin-name-display">Admin</p>
+                        <p class="text-[10px] text-slate-500 uppercase tracking-wider">Administrator</p>
                     </div>
-                    <div class="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
-                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
-                            </path>
-                        </svg>
-                    </div>
+                    <button onclick="logout()" class="text-[10px] text-red-400 hover:text-red-300 uppercase tracking-wider font-bold transition">Sign Out</button>
                 </div>
             </div>
+        </aside>
 
-            <!-- Messages Processed -->
-            <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">Messages Processed</p>
-                        <p class="text-3xl font-extrabold text-slate-900 mt-2" id="stat-messages">--</p>
-                    </div>
-                    <div class="w-12 h-12 bg-indigo-50 rounded-lg flex items-center justify-center">
-                        <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z">
-                            </path>
-                        </svg>
-                    </div>
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto">
+            <!-- Top Header -->
+            <header class="bg-white border-b border-slate-200 px-8 py-5 flex justify-between items-center sticky top-0 z-10">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-900">Dashboard Overview</h2>
+                    <p class="text-sm text-slate-500">GBV & Mental Health Support System — Live Metrics</p>
                 </div>
-            </div>
+                <div class="flex items-center space-x-2 text-xs text-green-600 bg-green-50 px-4 py-2 rounded-full border border-green-200 font-semibold">
+                    <span class="relative flex h-2 w-2 mr-1">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                    </span>
+                    System Online
+                </div>
+            </header>
 
-            <!-- AI Triage Responses -->
-            <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">AI Interventions</p>
-                        <p class="text-3xl font-extrabold text-slate-900 mt-2" id="stat-ai">--</p>
-                    </div>
-                    <div class="w-12 h-12 bg-emerald-50 rounded-lg flex items-center justify-center">
-                        <svg class="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                        </svg>
-                    </div>
-                </div>
-            </div>
+            <div class="px-8 py-8 space-y-8" id="analytics">
 
-            <!-- Active Emergencies -->
-            <div class="bg-white rounded-xl border border-red-200 p-6 shadow-sm relative overflow-hidden">
-                <div class="absolute top-0 right-0 w-32 h-32 bg-red-100 rounded-bl-full opacity-50 -mr-8 -mt-8"></div>
-                <div class="flex items-center justify-between relative z-10">
-                    <div>
-                        <p class="text-sm font-medium text-red-600 uppercase tracking-wider">Active Emergencies</p>
-                        <p class="text-3xl font-extrabold text-red-700 mt-2" id="stat-emergencies">--</p>
+                <!-- Analytics Section -->
+                <section>
+                    <div class="mb-6">
+                        <h3 class="text-lg font-bold text-slate-900">System Analytics</h3>
+                        <p class="text-sm text-slate-500">Live metrics from the database.</p>
                     </div>
-                    <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-                        <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
-                            </path>
-                        </svg>
-                    </div>
-                </div>
-            </div>
-        </div>
 
-        <!-- Mentors Table -->
-        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-            <div class="px-6 py-5 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
-                <h3 class="font-bold text-slate-800">Operational Capacity</h3>
-                <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold"
-                    id="stat-mentors">...</span>
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-5">
+                        <!-- Total Users -->
+                        <div class="stat-card bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl p-6 text-white shadow-lg shadow-blue-200">
+                            <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center mb-4">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                </svg>
+                            </div>
+                            <p class="text-3xl font-extrabold" id="stat-users">--</p>
+                            <p class="text-blue-200 text-xs font-medium mt-1 uppercase tracking-wider">Users Reached</p>
+                        </div>
+
+                        <!-- Messages -->
+                        <div class="stat-card bg-gradient-to-br from-violet-600 to-purple-700 rounded-2xl p-6 text-white shadow-lg shadow-purple-200">
+                            <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center mb-4">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
+                                </svg>
+                            </div>
+                            <p class="text-3xl font-extrabold" id="stat-messages">--</p>
+                            <p class="text-purple-200 text-xs font-medium mt-1 uppercase tracking-wider">Messages Processed</p>
+                        </div>
+
+                        <!-- AI Triage -->
+                        <div class="stat-card bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl p-6 text-white shadow-lg shadow-emerald-200">
+                            <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center mb-4">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                </svg>
+                            </div>
+                            <p class="text-3xl font-extrabold" id="stat-ai">--</p>
+                            <p class="text-emerald-200 text-xs font-medium mt-1 uppercase tracking-wider">AI Interventions</p>
+                        </div>
+
+                        <!-- Active Emergencies -->
+                        <div class="stat-card bg-gradient-to-br from-red-500 to-rose-600 rounded-2xl p-6 text-white shadow-lg shadow-red-200">
+                            <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center mb-4">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                </svg>
+                            </div>
+                            <p class="text-3xl font-extrabold" id="stat-emergencies">--</p>
+                            <p class="text-red-200 text-xs font-medium mt-1 uppercase tracking-wider">Active Emergencies</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Pending Approvals Section -->
+                <section id="approvals">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-900 flex items-center">
+                                Pending Counselor Approvals
+                                <span id="pending-count-badge" class="hidden ml-3 bg-red-500 text-white text-xs font-bold px-2.5 py-0.5 rounded-full pending-badge"></span>
+                            </h3>
+                            <p class="text-sm text-slate-500 mt-1">Review applicant credentials and approve or reject access.</p>
+                        </div>
+                    </div>
+
+                    <div id="pending-container">
+                        <!-- Cards will be injected here -->
+                        <div class="bg-white rounded-2xl border border-slate-200 p-10 text-center">
+                            <div class="w-8 h-8 border-2 border-slate-300 border-t-blue-500 rounded-full animate-spin mx-auto mb-4"></div>
+                            <p class="text-slate-400 text-sm">Loading applications...</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Footer Info Card -->
+                <section>
+                    <div class="bg-white rounded-2xl border border-slate-200 p-6 flex items-center space-x-4">
+                        <div class="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                            <svg class="w-6 h-6 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-sm font-semibold text-slate-700">Active Counselors: <span id="stat-mentors" class="text-blue-600">--</span></p>
+                            <p class="text-xs text-slate-500 mt-0.5">All counselors listed here have passed background verification and are cleared to access user data.</p>
+                        </div>
+                    </div>
+                </section>
+
             </div>
-            <div class="p-6 text-sm text-slate-600">
-                <p>This panel shows the total number of registered counselor accounts capable of responding to emergency
-                    human handoff protocols from the Groq NLP triage module.</p>
-                <div class="mt-4 p-4 bg-yellow-50 rounded border border-yellow-100 flex items-start">
-                    <svg class="w-5 h-5 text-yellow-600 mr-2 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor"
-                        viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    <p class="text-yellow-800">Only users with an Admin role can view this dashboard. To manage
-                        counselors, database administration tools are required.</p>
-                </div>
-            </div>
-        </div>
-    </main>
+        </main>
+    </div>
 
     <script>
         const token = localStorage.getItem("mentor_token");
@@ -152,10 +213,7 @@
 
         async function fetchStats() {
             if (!token) {
-                document.getElementById('loading-overlay').classList.add('hidden');
-                const errBox = document.getElementById('error-overlay');
-                errBox.classList.remove('hidden');
-                document.getElementById('error-message').innerText = "Please log in first.";
+                showError("Please log in first.");
                 return;
             }
 
@@ -164,39 +222,149 @@
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
 
-                if (!response.ok) {
-                    throw new Error(response.status);
-                }
+                if (!response.ok) throw new Error(response.status);
 
                 const data = await response.json();
-                const metrics = data.metrics;
+                const m = data.metrics;
 
-                document.getElementById('stat-users').innerText = metrics.total_users;
-                document.getElementById('stat-messages').innerText = metrics.total_messages_processed;
-                document.getElementById('stat-ai').innerText = metrics.total_ai_triage_responses;
-                document.getElementById('stat-emergencies').innerText = metrics.active_emergencies;
-                document.getElementById('stat-mentors').innerText = metrics.registered_counselors + " Active Counselors";
+                document.getElementById('stat-users').innerText = m.total_users.toLocaleString();
+                document.getElementById('stat-messages').innerText = m.total_messages_processed.toLocaleString();
+                document.getElementById('stat-ai').innerText = m.total_ai_triage_responses.toLocaleString();
+                document.getElementById('stat-emergencies').innerText = m.active_emergencies;
+                document.getElementById('stat-mentors').innerText = m.registered_counselors;
+                document.getElementById('admin-name-display').innerText = data.admin?.name || 'Admin';
 
                 document.getElementById('loading-overlay').classList.add('hidden');
+                fetchPendingMentors();
 
             } catch (err) {
                 document.getElementById('loading-overlay').classList.add('hidden');
-                const errBox = document.getElementById('error-overlay');
-                errBox.classList.remove('hidden');
-
                 if (err.message === "403") {
-                    document.getElementById('error-message').innerText = "You do not have Administrator privileges.";
+                    showError("You do not have Administrator privileges.");
                 } else if (err.message === "401") {
-                    document.getElementById('error-message').innerText = "Your login session has expired.";
+                    showError("Your login session has expired. Please log in again.");
                 } else {
-                    document.getElementById('error-message').innerText = "Unable to fetch live database analytics.";
+                    showError("Could not connect to the server.");
                 }
             }
         }
 
-        // Initialize
+        function showError(message) {
+            document.getElementById('loading-overlay').classList.add('hidden');
+            const errBox = document.getElementById('error-overlay');
+            errBox.classList.remove('hidden');
+            document.getElementById('error-message').innerText = message;
+        }
+
+        async function fetchPendingMentors() {
+            try {
+                const res = await fetch('/api/v1/admin/pending-mentors', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!res.ok) return;
+                const mentors = await res.json();
+                renderPendingList(mentors);
+            } catch (e) { console.error(e); }
+        }
+
+        function renderPendingList(mentors) {
+            const container = document.getElementById('pending-container');
+
+            if (mentors.length === 0) {
+                container.innerHTML = `
+                    <div class="bg-white rounded-2xl border border-slate-200 p-10 text-center">
+                        <div class="w-14 h-14 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-7 h-7 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        </div>
+                        <p class="font-semibold text-slate-700">All Caught Up!</p>
+                        <p class="text-slate-400 text-sm mt-1">No counselor applications are pending review.</p>
+                    </div>`;
+                document.getElementById('sidebar-badge').classList.add('hidden');
+                document.getElementById('pending-count-badge').classList.add('hidden');
+                return;
+            }
+
+            // Show badges
+            document.getElementById('sidebar-badge').classList.remove('hidden');
+            const badge = document.getElementById('pending-count-badge');
+            badge.innerText = `${mentors.length} Pending`;
+            badge.classList.remove('hidden');
+
+            container.innerHTML = `<div class="grid grid-cols-1 lg:grid-cols-2 gap-5" id="pending-cards"></div>`;
+            const cardsGrid = document.getElementById('pending-cards');
+
+            mentors.forEach(m => {
+                const card = document.createElement('div');
+                card.className = 'bg-white rounded-2xl border border-amber-200 shadow-sm overflow-hidden';
+                card.innerHTML = `
+                    <div class="bg-amber-50 border-b border-amber-100 px-5 py-3 flex items-center justify-between">
+                        <span class="text-[10px] uppercase font-bold tracking-wider text-amber-700">⏳ Pending Review</span>
+                        <span class="text-[10px] text-slate-400">${m.created_at ? new Date(m.created_at).toLocaleDateString('en-KE', {day:'numeric', month:'short', year:'numeric'}) : 'N/A'}</span>
+                    </div>
+                    <div class="p-5">
+                        <div class="flex items-start justify-between mb-4">
+                            <div>
+                                <h4 class="font-bold text-slate-900 text-base">${m.name}</h4>
+                                <p class="text-xs text-slate-500">${m.email}</p>
+                                <p class="text-xs text-slate-400 mt-0.5">${m.phone || 'No phone provided'}</p>
+                            </div>
+                            <div class="text-right flex-shrink-0 ml-4">
+                                <span class="inline-block bg-blue-100 text-blue-700 text-xs font-semibold px-3 py-1 rounded-full">${m.specialization || 'Unspecified'}</span>
+                                <p class="text-xs text-slate-400 mt-2">${m.experience || 0} yrs exp.</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-50 rounded-xl p-4 mb-5">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-[10px] text-indigo-600 font-bold uppercase tracking-wider">License:</span>
+                                <span class="text-xs font-semibold text-slate-700 font-mono">${m.license || 'Not provided'}</span>
+                            </div>
+                            <p class="text-xs text-slate-500 italic leading-relaxed border-t border-slate-200 pt-3 mt-2">"${m.bio || 'No bio provided.'}"</p>
+                        </div>
+
+                        <div class="flex space-x-3">
+                            <button onclick="approveMentor(${m.id}, this)" class="flex-1 py-2.5 bg-green-600 hover:bg-green-700 text-white text-sm font-bold rounded-xl transition shadow-sm shadow-green-200">
+                                ✓ Approve Access
+                            </button>
+                            <button onclick="rejectMentor(${m.id}, this)" class="flex-1 py-2.5 bg-white border border-red-200 hover:bg-red-50 text-red-600 text-sm font-bold rounded-xl transition">
+                                ✗ Reject
+                            </button>
+                        </div>
+                    </div>
+                `;
+                cardsGrid.appendChild(card);
+            });
+        }
+
+        async function approveMentor(id, btn) {
+            if (!confirm("Approve this counselor? They will gain immediate access to user data.")) return;
+            btn.disabled = true;
+            btn.innerText = "Approving...";
+            try {
+                const res = await fetch(`/api/v1/admin/approve-mentor/${id}`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) { fetchStats(); }
+                else { btn.disabled = false; btn.innerText = "✓ Approve Access"; alert("Failed to approve. Try again."); }
+            } catch (e) { console.error(e); }
+        }
+
+        async function rejectMentor(id, btn) {
+            if (!confirm("Reject and permanently DELETE this application? This cannot be undone.")) return;
+            btn.disabled = true;
+            btn.innerText = "Rejecting...";
+            try {
+                const res = await fetch(`/api/v1/admin/reject-mentor/${id}`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) { fetchStats(); }
+                else { btn.disabled = false; btn.innerText = "✗ Reject"; alert("Failed to reject. Try again."); }
+            } catch (e) { console.error(e); }
+        }
+
         fetchStats();
     </script>
 </body>
-
 </html>

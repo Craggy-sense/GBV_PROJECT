@@ -1,5 +1,6 @@
 from typing import Dict, List
 import time
+from app.db import crud
 
 # In-memory session storage. 
 # Key: Phone number (string)

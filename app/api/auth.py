@@ -13,6 +13,11 @@ class MentorCreate(BaseModel):
     name: str
     email: str
     password: str
+    phone_number: Optional[str] = None
+    specialization: Optional[str] = None
+    experience_years: Optional[int] = None
+    bio: Optional[str] = None
+    license_number: Optional[str] = None
     admin_secret: Optional[str] = None # Secret key required to register as admin
 
 class Token(BaseModel):
@@ -21,19 +26,27 @@ class Token(BaseModel):
 
 @router.post("/register", response_model=Token)
 def register_mentor(mentor_in: MentorCreate, db: Session = Depends(get_db)):
-    """Creates a new Mentor account in the SQL database."""
+    """Creates a new Mentor account in the SQL database. Requires approval."""
     user = crud.get_mentor_by_email(db, email=mentor_in.email)
     if user:
         raise HTTPException(status_code=400, detail="Email already registered")
         
     # Super simple "secret" to allow the first user to become an admin
+    # Admins are auto-approved
     is_admin = (mentor_in.admin_secret == "supersecretjootrh")
+    is_approved = is_admin 
     
     hashed_password = security.get_password_hash(mentor_in.password)
     new_mentor = models.Mentor(
         email=mentor_in.email, 
         hashed_password=hashed_password, 
         name=mentor_in.name,
+        phone_number=mentor_in.phone_number,
+        specialization=mentor_in.specialization,
+        experience_years=mentor_in.experience_years,
+        bio=mentor_in.bio,
+        license_number=mentor_in.license_number,
+        is_approved=is_approved,
         is_admin=is_admin
     )
     
@@ -41,7 +54,15 @@ def register_mentor(mentor_in: MentorCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_mentor)
     
-    # Auto-login after registration
+    # We DON'T auto-login if they aren't approved yet
+    if not is_approved:
+        # Return a special "Success but pending" response or just raise a 201 with message
+        # But we'll follow the token schema to keep it simple, just return an empty token or error
+        raise HTTPException(
+            status_code=201, 
+            detail="Account created successfully. Your profile is now under review by our administration. We will contact you shortly."
+        )
+        
     access_token = security.create_access_token(data={"sub": new_mentor.email})
     return {"access_token": access_token, "token_type": "bearer"}
 
@@ -55,6 +76,13 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    
+    if not user.is_approved:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Your account is currently pending administrative review. Please try again later."
+        )
+
     access_token = security.create_access_token(data={"sub": user.email})
     return {"access_token": access_token, "token_type": "bearer"}
 
