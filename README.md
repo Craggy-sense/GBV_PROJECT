@@ -1,6 +1,6 @@
-# JooTRH GBV & Mental Health Support Chatbot
+# Mind Rafiki — Mental Health & Counselor Support
 
-An AI-powered triage assistant designed to provide immediate support for Gender-Based Violence (GBV) and Mental Health crises, with seamless escalation to human counselors.
+An AI-powered triage assistant designed to provide ease of mind and immediate support for Mental Health crises, with seamless escalation to human counselors.
 
 ## Tech Stack
 - **Backend:** FastAPI (Python 3.9+)

@@ -7,18 +7,47 @@ from app.db import models
 from app.core import security
 import csv, io
 from datetime import datetime, timezone
+from pydantic import BaseModel
+
+class RejectReason(BaseModel):
+    reason: str = ""
 
 router = APIRouter()
 
 @router.get("/stats")
 async def get_admin_statistics(
+    period: str = "all", # all | today | week | month
     db: Session = Depends(get_db),
     admin: models.Mentor = Depends(security.get_current_active_admin)
 ):
-    """Returns aggregated system usage statistics."""
-    total_users = db.query(models.WhatsAppUser).count()
-    total_messages = db.query(models.ChatMessage).count()
-    total_ai_responses = db.query(models.ChatMessage).filter(models.ChatMessage.role == 'assistant').count()
+    """Returns aggregated system usage statistics based on a timeline."""
+    from datetime import timedelta, timezone
+    now = datetime.now(timezone.utc)
+    
+    if period == "today":
+        cutoff = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    elif period == "week":
+        cutoff = now - timedelta(days=7)
+    elif period == "month":
+        cutoff = now - timedelta(days=30)
+    else:
+        cutoff = None
+        
+    def msg_q():
+        q = db.query(models.ChatMessage)
+        if cutoff:
+            q = q.filter(models.ChatMessage.timestamp >= cutoff)
+        return q
+        
+    def user_q():
+        q = db.query(models.WhatsAppUser)
+        if cutoff:
+            q = q.filter(models.WhatsAppUser.created_at >= cutoff)
+        return q
+
+    total_users = user_q().count()
+    total_messages = msg_q().count()
+    total_ai_responses = msg_q().filter(models.ChatMessage.role == 'assistant').count()
     active_escalations = db.query(models.WhatsAppUser).filter(models.WhatsAppUser.is_escalated == True).count()
     total_mentors = db.query(models.Mentor).filter(models.Mentor.is_approved == True).count()
     
@@ -99,17 +128,29 @@ async def approve_counselor(
 ):
     """Approve a counselor application."""
     from app.db import crud
+    from app.core.notifications import notifier
+
     mentor = crud.approve_mentor(db, mentor_id)
+    if mentor:
+        notifier.send_mentor_approval_email(mentor.email, mentor.name)
+
     return {"status": "success", "message": f"Mentor {mentor.name} approved."}
 
 @router.post("/reject-mentor/{mentor_id}")
 async def reject_counselor(
     mentor_id: int,
+    payload: RejectReason,
     db: Session = Depends(get_db),
     admin: models.Mentor = Depends(security.get_current_active_admin)
 ):
     """Reject and delete a counselor application."""
     from app.db import crud
+    from app.core.notifications import notifier
+
+    mentor = db.query(models.Mentor).filter(models.Mentor.id == mentor_id).first()
+    if mentor:
+        notifier.send_mentor_rejection_email(mentor.email, mentor.name, payload.reason)
+
     crud.delete_mentor(db, mentor_id)
     return {"status": "success", "message": "Mentor application rejected."}
 
@@ -248,3 +289,40 @@ async def download_metrics_report(
         }
     )
 
+@router.get("/download-mentors")
+async def download_mentors_report(
+    db: Session = Depends(get_db),
+    admin: models.Mentor = Depends(security.get_current_active_admin)
+):
+    """Generate and download a CSV of approved counselors."""
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    now = datetime.now(timezone.utc)
+    writer.writerow(["Counselor Team Export"])
+    writer.writerow([f"Generated: {now.strftime('%Y-%m-%d %H:%M UTC')}"])
+    writer.writerow([])
+    writer.writerow(["Name", "Email", "Phone Number", "Specialization", "Experience (Yrs)", "License", "Date Joined"])
+    
+    approved = db.query(models.Mentor).filter(
+        models.Mentor.is_approved == True, models.Mentor.is_admin == False
+    ).all()
+    
+    for m in approved:
+        writer.writerow([
+            m.name, m.email, m.phone_number or "N/A", m.specialization or "N/A",
+            m.experience_years or 0, m.license_number or "N/A",
+            m.created_at.strftime("%Y-%m-%d") if m.created_at else "N/A"
+        ])
+        
+    output.seek(0)
+    filename = f"jootrh_mentors_{now.strftime('%Y%m%d_%H%M')}.csv"
+    
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": f"attachment; filename=\"{filename}\"; filename*=UTF-8''{filename}",
+            "Access-Control-Expose-Headers": "Content-Disposition"
+        }
+    )

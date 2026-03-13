@@ -17,6 +17,7 @@ class Mentor(Base):
     license_number = Column(String, nullable=True)
     is_approved = Column(Boolean, default=False) # Requires admin approval
     is_admin = Column(Boolean, default=False)
+    profile_picture_url = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 class WhatsAppUser(Base):

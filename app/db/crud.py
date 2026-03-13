@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
 from app.db import models
 from datetime import datetime
 
@@ -44,9 +45,18 @@ def clear_chat_history(db: Session, phone_number: str):
 def get_mentor_by_email(db: Session, email: str):
     return db.query(models.Mentor).filter(models.Mentor.email == email).first()
 
-def get_escalated_queues(db: Session):
+def get_escalated_queues(db: Session, mentor_id: int = None):
     """Fetch all users currently flagged for human intervention, including claim status."""
-    escalated_users = db.query(models.WhatsAppUser).filter(models.WhatsAppUser.is_escalated == True).all()
+    query = db.query(models.WhatsAppUser).filter(models.WhatsAppUser.is_escalated == True)
+    
+    if mentor_id:
+        # Show users that are either UNCLAIMED or claimed by THIS specific mentor
+        query = query.filter(or_(
+            models.WhatsAppUser.claimed_by_mentor_id == None,
+            models.WhatsAppUser.claimed_by_mentor_id == mentor_id
+        ))
+        
+    escalated_users = query.all()
     queue = []
     for user in escalated_users:
         messages = db.query(models.ChatMessage).filter(models.ChatMessage.user_id == user.id).order_by(models.ChatMessage.timestamp.asc()).all()

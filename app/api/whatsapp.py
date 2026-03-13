@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.db.database import get_db
 from app.chatbot.nlp import generate_empathetic_response
 from app.chatbot.session import get_session_history, append_to_history, clear_session, is_human_handoff_active, trigger_human_handoff
+from app.db import crud
 
 router = APIRouter()
 
@@ -28,11 +29,20 @@ async def twilio_webhook(request: Request, background_tasks: BackgroundTasks, db
          return Response(content=str(resp), media_type="application/xml")
 
     # Step 0: Check if Human Handoff is already active
-    if is_human_handoff_active(db, sender_number):
+    user = crud.get_or_create_user(db, sender_number)
+    if user.is_escalated:
          # Log the user's message to the history but DO NOT call the AI
          append_to_history(db, sender_number, "user", incoming_msg)
+         
+         # Only send the automated message if NO ONE has claimed it yet
+         # This prevents annoying the user with repetitive messages once they are talking to a human
+         if not user.claimed_by_mentor_id:
+             resp = MessagingResponse()
+             resp.message("A counselor is still reviewing your messages. We will reply shortly. Please hold on.")
+             return Response(content=str(resp), media_type="application/xml")
+         
+         # If claimed, we stay silent and let the mentor handle the conversation
          resp = MessagingResponse()
-         resp.message("A counselor is still reviewing your messages. We will reply shortly. Please hold on.")
          return Response(content=str(resp), media_type="application/xml")
 
     # Step 1: Detect and Translate incoming message to English (Option 2)

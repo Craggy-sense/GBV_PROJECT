@@ -50,18 +50,23 @@ def is_human_handoff_active(db, phone_number: str) -> bool:
 
 def trigger_human_handoff(db, phone_number: str):
     """Locks the session in the DB, bypassing AI for all future messages until resolved."""
-    # if phone_number not in sessions: # No longer needed, crud handles user creation
-    #     get_session_history(phone_number)
-    
-    # sessions[phone_number]["needs_human"] = True # No longer needed, using DB
     crud.set_user_escalation(db, phone_number, is_escalated=True)
     
-    # --- MOCK NOTIFICATION SYSTEM ---
+    from app.core.notifications import notifier
+    from app.db.models import Mentor
+    
+    # Broadcast emergency email to all approved mentors
+    approved_mentors = db.query(Mentor).filter(Mentor.is_approved == True).all()
+    emails = [m.email for m in approved_mentors if m.email]
+    if emails:
+        notifier.send_emergency_alert(emails, phone_number)
+    
+    # --- MOCK NOTIFICATION SYSTEM FALLBACK LOGGING ---
     print("\n" + "="*50)
     print("🚨 EMERGENCY ESCALATION TRIGGERED 🚨")
     print(f"👉 SENDING SMS/EMAIL NOTIFICATION TO MENTOR ON DUTY")
     print(f"👉 User: {phone_number}")
-    print(f"👉 Please log in to http://localhost:8001/mentor to reply.")
+    print(f"👉 Please log in to http://localhost:8000/mentor to reply.")
     print("="*50 + "\n")
 
 def resolve_human_handoff(db, phone_number: str):

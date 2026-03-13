@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from typing import Dict, List, Any
@@ -8,6 +8,8 @@ from app.core import security
 from app.db import models, crud
 from app.db.database import get_db
 from app.chatbot.session import is_human_handoff_active, get_session_history, resolve_human_handoff, append_to_history
+import os
+from datetime import datetime
 
 router = APIRouter()
 
@@ -99,7 +101,8 @@ async def get_mentor_queue(
     current_mentor: models.Mentor = Depends(security.get_current_mentor)
 ):
     """Returns a list of all phone numbers currently flagged for human intervention from the DB."""
-    queue = crud.get_escalated_queues(db)
+    # PASS current_mentor.id to ensure isolated privacy
+    queue = crud.get_escalated_queues(db, mentor_id=current_mentor.id)
     return {"active_escalations": queue}
 
 @router.get("/me/stats")
@@ -115,9 +118,60 @@ async def get_my_stats(
     return {
         "mentor_id": current_mentor.id,
         "name": current_mentor.name,
+        "email": current_mentor.email,
+        "phone": current_mentor.phone_number,
         "specialization": current_mentor.specialization or "Counselor",
+        "experience": current_mentor.experience_years or 0,
+        "bio": current_mentor.bio or "",
+        "profile_picture_url": current_mentor.profile_picture_url,
         "sessions_handled": sessions,
         "clients_served": clients,
         "active_escalations": active,
         "is_admin": current_mentor.is_admin
     }
+
+class ProfileUpdate(BaseModel):
+    name: str = None
+    phone_number: str = None
+    specialization: str = None
+    experience_years: int = None
+    bio: str = None
+
+@router.put("/me")
+async def update_profile(
+    payload: ProfileUpdate,
+    db: Session = Depends(get_db),
+    current_mentor: models.Mentor = Depends(security.get_current_mentor)
+):
+    """Update personal profile details."""
+    if payload.name: current_mentor.name = payload.name
+    if payload.phone_number: current_mentor.phone_number = payload.phone_number
+    if payload.specialization: current_mentor.specialization = payload.specialization
+    if payload.experience_years is not None: current_mentor.experience_years = payload.experience_years
+    if payload.bio: current_mentor.bio = payload.bio
+    
+    db.commit()
+    return {"status": "success", "message": "Profile updated."}
+
+@router.post("/me/photo")
+async def upload_profile_photo(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_mentor: models.Mentor = Depends(security.get_current_mentor)
+):
+    """Upload and set a profile picture."""
+    # Ensure directory exists
+    upload_dir = os.path.join("app", "static", "uploads", "mentors")
+    os.makedirs(upload_dir, exist_ok=True)
+    
+    file_ext = file.filename.split(".")[-1]
+    filename = f"mentor_{current_mentor.id}_{int(datetime.utcnow().timestamp())}.{file_ext}"
+    file_path = os.path.join(upload_dir, filename)
+    
+    with open(file_path, "wb") as buffer:
+        buffer.write(await file.read())
+        
+    current_mentor.profile_picture_url = f"/static/uploads/mentors/{filename}"
+    db.commit()
+    
+    return {"status": "success", "url": current_mentor.profile_picture_url}

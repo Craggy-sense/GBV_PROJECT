@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JOOTRH GBV Mentor Dashboard</title>
+    <title>Mind Rafiki — Counselor Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .chat-container { height: calc(100vh - 200px); }
@@ -42,7 +42,7 @@
                     <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
                 </div>
                 <div>
-                    <h1 class="text-sm font-bold text-white">JooTRH Counselor</h1>
+                    <h1 class="text-sm font-bold text-white">Mind Rafiki</h1>
                     <p class="text-[10px] text-slate-400 uppercase tracking-wider">Crisis Triage Terminal</p>
                 </div>
             </div>
@@ -76,14 +76,17 @@
         <!-- Header -->
         <header class="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center shadow-sm z-10">
             <div>
-                <h1 class="text-xl font-bold" style="background:linear-gradient(90deg,#3BA7A0,#2C7C77);-webkit-background-clip:text;-webkit-text-fill-color:transparent">Counselor Dashboard</h1>
+                <h1 class="text-xl font-bold" style="background:linear-gradient(90deg,#3BA7A0,#2C7C77);-webkit-background-clip:text;-webkit-text-fill-color:transparent">Mind Rafiki Dashboard</h1>
                 <p class="text-xs text-slate-500">GBV & Mental Health Crisis Triage — Live Queue</p>
             </div>
             <div class="flex items-center space-x-4">
                 <a href="/admin" id="admin-link" class="hidden text-xs font-bold px-3 py-1.5 rounded-xl transition" style="background:#E6F7F6;color:#2C7C77">Admin Hub</a>
-                <div class="text-right">
-                    <p class="text-sm font-semibold text-slate-700" id="mentor-name-display">Loading...</p>
+                <div class="text-right cursor-pointer group" onclick="openProfileModal()">
+                    <p class="text-sm font-semibold text-slate-700 group-hover:text-[#3BA7A0] transition" id="mentor-name-display">Loading...</p>
                     <p class="text-[10px] text-slate-400" id="mentor-spec-display">Counselor</p>
+                </div>
+                <div class="w-10 h-10 rounded-full border-2 border-[#3BA7A0]/20 overflow-hidden cursor-pointer" onclick="openProfileModal()">
+                    <img id="mentor-photo-display" src="https://ui-avatars.com/api/?name=Counselor&background=3BA7A0&color=fff" class="w-full h-full object-cover">
                 </div>
                 <button onclick="logout()" class="text-xs font-bold px-3 py-1.5 rounded-xl text-red-500 bg-red-50 hover:bg-red-100 transition">Sign Out</button>
                 <div class="flex items-center space-x-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border" style="color:#2C7C77;background:#E6F7F6;border-color:rgba(59,167,160,0.3)">
@@ -135,6 +138,61 @@
         </div>
     </div>
 
+    <!-- Profile Modal -->
+    <div id="profile-modal" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm hidden p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+            <div class="p-6 border-b border-slate-100 flex justify-between items-center">
+                <h2 class="text-xl font-bold text-slate-800">My Profile Settings</h2>
+                <button onclick="closeProfileModal()" class="text-slate-400 hover:text-slate-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="p-6 space-y-6 overflow-y-auto max-h-[80vh]">
+                <div class="flex items-center space-x-6">
+                    <div class="relative group">
+                        <img id="modal-photo-preview" src="https://ui-avatars.com/api/?name=C&background=3BA7A0&color=fff" class="w-24 h-24 rounded-2xl object-cover border-4 border-[#E6F7F6]">
+                        <label class="absolute inset-0 flex items-center justify-center bg-black/40 text-white rounded-2xl opacity-0 group-hover:opacity-100 cursor-pointer transition">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                            <input type="file" class="hidden" accept="image/*" onchange="uploadPhoto(this)">
+                        </label>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="font-bold text-slate-800" id="profile-name-label">Loading Name...</h3>
+                        <p class="text-sm text-slate-500">Click photo to update</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Full Name</label>
+                        <input type="text" id="prof-name" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#3BA7A0] outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Phone Number</label>
+                        <input type="text" id="prof-phone" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#3BA7A0] outline-none">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Specialization</label>
+                        <input type="text" id="prof-spec" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#3BA7A0] outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Years of Experience</label>
+                        <input type="number" id="prof-exp" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#3BA7A0] outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Brief Bio</label>
+                    <textarea id="prof-bio" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#3BA7A0] outline-none h-24 resize-none"></textarea>
+                </div>
+                <div class="pt-4 flex space-x-3">
+                    <button onclick="saveProfile()" id="save-prof-btn" class="flex-1 py-3 bg-[#3BA7A0] text-white font-bold rounded-xl shadow-lg hover:shadow-[#3BA7A0]/20 transition transform active:scale-95">Save Changes</button>
+                    <button onclick="closeProfileModal()" class="px-6 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <!-- Authentication Overlay -->
     <div id="auth-overlay" class="fixed inset-0 z-50 flex items-center justify-center bg-[#1a2f2e]/95 backdrop-blur-sm hidden p-4">
         <!-- Close / Back to Home button -->
@@ -287,8 +345,8 @@
             if (!token) {
                 document.getElementById('auth-overlay').classList.remove('hidden');
             } else {
-                fetchQueue();
                 fetchMe();
+                fetchQueue();
                 setInterval(fetchQueue, 5000);
             }
         }
@@ -443,50 +501,139 @@
 
         async function fetchMe() {
             try {
-                // Fetch basic profile
-                const res = await fetch('/api/v1/auth/me', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    document.getElementById('mentor-name-display').innerText = data.name;
-                    if (data.is_admin) {
-                        document.getElementById('admin-link').classList.remove('hidden');
-                    }
-                }
-
-                // Fetch personal performance stats
                 const statsRes = await fetch('/api/v1/mentor/me/stats', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (statsRes.ok) {
                     const s = await statsRes.json();
                     currentMentorId = s.mentor_id;
+                    document.getElementById('mentor-name-display').innerText = s.name;
+                    document.getElementById('profile-name-label').innerText = s.name;
+                    document.getElementById('mentor-spec-display').innerText = s.specialization || 'Counselor';
+                    
+                    // Fill form
+                    document.getElementById('prof-name').value = s.name;
+                    document.getElementById('prof-phone').value = s.phone || '';
+                    document.getElementById('prof-spec').value = s.specialization || '';
+                    document.getElementById('prof-exp').value = s.experience || 0;
+                    document.getElementById('prof-bio').value = s.bio || '';
+                    
+                    if (s.profile_picture_url) {
+                        const imgUrl = `${window.location.origin}${s.profile_picture_url}`;
+                        document.getElementById('mentor-photo-display').src = imgUrl;
+                        document.getElementById('modal-photo-preview').src = imgUrl;
+                    } else {
+                        const avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(s.name)}&background=3BA7A0&color=fff`;
+                        document.getElementById('mentor-photo-display').src = avatar;
+                        document.getElementById('modal-photo-preview').src = avatar;
+                    }
+
                     document.getElementById('stat-sessions').innerText = s.sessions_handled;
                     document.getElementById('stat-clients').innerText = s.clients_served;
                     document.getElementById('stat-active').innerText = s.active_escalations;
-                    const specEl = document.getElementById('mentor-spec-display');
-                    if (specEl) specEl.innerText = s.specialization || 'Counselor';
+                    
+                    if (s.is_admin) {
+                        document.getElementById('admin-link').classList.remove('hidden');
+                    }
                 }
             } catch (e) { console.error(e); }
         }
 
+        function openProfileModal() {
+            document.getElementById('profile-modal').classList.remove('hidden');
+            fetchMe(); // Refresh data
+        }
+
+        function closeProfileModal() {
+            document.getElementById('profile-modal').classList.add('hidden');
+        }
+
+        async function saveProfile() {
+            const btn = document.getElementById('save-prof-btn');
+            const originalText = btn.innerText;
+            btn.innerText = "Saving...";
+            btn.disabled = true;
+
+            const payload = {
+                name: document.getElementById('prof-name').value,
+                phone_number: document.getElementById('prof-phone').value,
+                specialization: document.getElementById('prof-spec').value,
+                experience_years: parseInt(document.getElementById('prof-exp').value),
+                bio: document.getElementById('prof-bio').value
+            };
+
+            try {
+                const res = await fetch('/api/v1/mentor/me', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+                if (res.ok) {
+                    alert("Profile updated successfully!");
+                    fetchMe();
+                    closeProfileModal();
+                } else {
+                    alert("Failed to update profile.");
+                }
+            } catch (e) { console.error(e); }
+            finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        async function uploadPhoto(input) {
+            if (!input.files || !input.files[0]) return;
+            const file = input.files[0];
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const res = await fetch('/api/v1/mentor/me/photo', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    const imgUrl = `${window.location.origin}${data.url}`;
+                    document.getElementById('mentor-photo-display').src = imgUrl;
+                    document.getElementById('modal-photo-preview').src = imgUrl;
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        let lastQueueCount = 0;
         async function fetchQueue() {
             try {
                 const response = await fetch('/api/v1/mentor/queue', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
 
-                if (response.status === 401) { logout(); return; } // Token expired
+                if (response.status === 401) { logout(); return; } 
 
                 const data = await response.json();
+                
+                // Isolation is handled by backend mentor_id filter now
                 escalationsCache = data.active_escalations;
+                
+                // System notification for new unclaimed sessions
+                const unclaimed = escalationsCache.filter(e => !e.claimed_by_mentor_id).length;
+                if (unclaimed > lastQueueCount) {
+                    notifyNewClient();
+                }
+                lastQueueCount = unclaimed;
+
                 renderQueue();
 
                 // Refresh active chat if someone is selected
                 if (currentPhone) {
                     const activeCase = escalationsCache.find(c => c.phone_number === currentPhone);
                     if (activeCase) {
+                        updateChatHeaderUI(activeCase);
                         renderChat(activeCase.history);
                     } else {
                         // They were resolved and removed from queue
@@ -501,6 +648,34 @@
                 }
             } catch (err) {
                 console.error("Failed to fetch queue", err);
+            }
+        }
+
+        function updateChatHeaderUI(activeCase) {
+            if (!activeCase) return;
+            const phone = activeCase.phone_number;
+            document.getElementById('current-user-title').innerText = phone.replace('whatsapp:', '');
+
+            const isClaimedByMe = activeCase.claimed_by_mentor_id === currentMentorId;
+            const isClaimedByOther = activeCase.claimed_by_mentor_id && !isClaimedByMe;
+
+            if (isClaimedByOther) {
+                document.getElementById('current-user-status').innerText = `Claimed by ${activeCase.claimed_by_name}. You cannot reply.`;
+                document.getElementById('resolve-btn').classList.add('hidden');
+                document.getElementById('reply-input').disabled = true;
+                document.getElementById('send-btn').disabled = true;
+                document.getElementById('reply-input').placeholder = "Case handled by another counselor.";
+            } else {
+                if (isClaimedByMe) {
+                    document.getElementById('current-user-status').innerText = "You have claimed this case. (Reply to continue)";
+                    document.getElementById('resolve-btn').classList.remove('hidden');
+                } else {
+                    document.getElementById('current-user-status').innerText = "Unclaimed Emergency. (Replying will claim it)";
+                    document.getElementById('resolve-btn').classList.add('hidden'); 
+                }
+                document.getElementById('reply-input').disabled = false;
+                document.getElementById('send-btn').disabled = false;
+                document.getElementById('reply-input').placeholder = "Type your reply... (sends directly via WhatsApp)";
             }
         }
 
@@ -547,33 +722,11 @@
         function selectUser(phone) {
             currentPhone = phone;
             const activeCase = escalationsCache.find(c => c.phone_number === phone);
-
-            document.getElementById('current-user-title').innerText = phone.replace('whatsapp:', '');
-
-            const isClaimedByMe = activeCase.claimed_by_mentor_id === currentMentorId;
-            const isClaimedByOther = activeCase.claimed_by_mentor_id && !isClaimedByMe;
-
-            if (isClaimedByOther) {
-                document.getElementById('current-user-status').innerText = `Claimed by ${activeCase.claimed_by_name}. You cannot reply.`;
-                document.getElementById('resolve-btn').classList.add('hidden');
-                document.getElementById('reply-input').disabled = true;
-                document.getElementById('send-btn').disabled = true;
-                document.getElementById('reply-input').placeholder = "Case handled by another counselor.";
-            } else {
-                if (isClaimedByMe) {
-                    document.getElementById('current-user-status').innerText = "You have claimed this case. (Reply to continue)";
-                    document.getElementById('resolve-btn').classList.remove('hidden');
-                } else {
-                    document.getElementById('current-user-status').innerText = "Unclaimed Emergency. (Replying will claim it)";
-                    document.getElementById('resolve-btn').classList.add('hidden'); // Only show when claimed
-                }
-                document.getElementById('reply-input').disabled = false;
-                document.getElementById('send-btn').disabled = false;
-                document.getElementById('reply-input').placeholder = "Type your reply... (sends directly via WhatsApp)";
-            }
-
+            updateChatHeaderUI(activeCase);
             renderChat(activeCase.history);
             renderQueue();
+            
+            const isClaimedByOther = activeCase.claimed_by_mentor_id && activeCase.claimed_by_mentor_id !== currentMentorId;
             if (!isClaimedByOther) document.getElementById('reply-input').focus();
         }
 
@@ -666,7 +819,7 @@
                     },
                     body: JSON.stringify({
                         phone_number: currentPhone,
-                        message: "The human counselor has concluded this session. You are now back in standard bot triage. You can type /clear anytime.",
+                        message: "The human counselor has concluded this session. You are now back in standard bot triage.",
                         resolve_session: true
                     })
                 });
@@ -689,8 +842,27 @@
                 .replace(/'/g, "&#039;");
         }
 
+        async function notifyNewClient() {
+            if (!("Notification" in window)) return;
+            
+            if (Notification.permission === "granted") {
+                new Notification("New Client Request", {
+                    body: "A client is waiting for counselor assistance.",
+                    icon: "/static/favicon.ico"
+                });
+            } else if (Notification.permission !== "denied") {
+                const permission = await Notification.requestPermission();
+                if (permission === "granted") {
+                    notifyNewClient();
+                }
+            }
+        }
+
         // Initialize App
         checkAuth();
+        if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
+            Notification.requestPermission();
+        }
     </script>
 </body>
 
